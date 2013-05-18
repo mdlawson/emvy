@@ -317,43 +317,49 @@
     Model = (function(_super) {
       __extends(Model, _super);
 
-      Model.is(Evented());
-
-      Model.models = [];
-
-      function Model(keys) {
-        var id, key, val;
-
-        if (keys == null) {
-          keys = {};
+      function Model(data) {
+        if (data == null) {
+          data = {};
         }
-        this.is(Attributed(this.constructor.models[id = this.constructor.models.length] = {}));
-        this.set("id", id);
-        for (key in keys) {
-          val = keys[key];
-          this.set(key, val);
-        }
+        this.is(Attributed(this.constructor.add(data)));
         this.constructor.trigger("add", this);
       }
 
-      Model.all = function() {
-        return this.models;
-      };
+      Model.init = function() {
+        var models;
 
-      Model.remove = function(model) {
-        this.trigger("remove", model);
-        return this.models.splice(this.models.indexOf(model), 1);
-      };
+        this.is(Evented());
+        models = [];
+        this.add = function(data) {
+          var key, model, val;
 
-      Model.reset = function(data) {
-        var item, _i, _len;
+          model = models[models.length] = {
+            id: models.length
+          };
+          for (key in data) {
+            val = data[key];
+            model[key] = val;
+          }
+          return model;
+        };
+        this.remove = function(model) {
+          this.trigger("remove", model);
+          return models.splice(models.indexOf(model), 1);
+        };
+        this.reset = function(data) {
+          var item, _i, _len;
 
-        this.models = [];
-        for (_i = 0, _len = data.length; _i < _len; _i++) {
-          item = data[_i];
-          new this(item);
-        }
-        return this.trigger("reset", this.models);
+          models = [];
+          for (_i = 0, _len = data.length; _i < _len; _i++) {
+            item = data[_i];
+            new this(item);
+          }
+          return this.trigger("reset", models);
+        };
+        this.all = function() {
+          return models;
+        };
+        return this;
       };
 
       return Model;

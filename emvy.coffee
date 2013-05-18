@@ -160,21 +160,25 @@
     mixin: (obj,ignore) -> @[key] = val for key, val of obj when key not in ignore
 
   class Model extends Base
-    @is Evented()
-    @models: []
-    constructor: (keys={}) ->
-      @is Attributed(@constructor.models[id = @constructor.models.length] = {})
-      @set "id",id
-      @set key, val for key, val of keys
+    constructor: (data={}) ->
+      @is Attributed(@constructor.add(data))
       @constructor.trigger "add",@
-    @all: -> return @models
-    @remove: (model) -> 
-      @trigger "remove",model
-      @models.splice @models.indexOf(model),1
-    @reset: (data) ->
-      @models = []
-      new @(item) for item in data
-      @trigger "reset",@models
+    @init: ->
+      @is Evented()
+      models = []
+      @add = (data) ->
+        model = models[models.length] = {id:models.length}
+        model[key] = val for key,val of data
+        return model
+      @remove = (model) ->
+        @trigger "remove",model
+        models.splice models.indexOf(model),1
+      @reset = (data) ->
+        models = []
+        new @(item) for item in data
+        @trigger "reset",models
+      @all = -> return models
+      return @
 
   class View extends Base
     constructor: (options={}) ->
