@@ -65,29 +65,50 @@
     element.innerHTML = html or ""
     binds = {}
     outlets = {}
-    rebuild = ->
-      bindElements = element.querySelectorAll "[data-bind]"
-      for el in bindElements
-        name = el.getAttribute "data-bind"
-        binds[name] = el
-      outlets = element.querySelectorAll "[data-outlet]"
-      for el in outlets
-        name = el.getAttribute "data-outlet"
-        outlets[name] = el
-    rebuild()
     return ->
       @is Evented()
-      element.addEventListener "change", (e) =>
-        el = e.target
-        name = el.getAttribute "data-bind"
-        if name
-          @trigger "change",name,el.value,el
-          @trigger "change:#{name}",el.value,el
+      rebuild = =>
+        bindElements = element.querySelectorAll "[data-bind]"
+        for el in bindElements
+          name = el.getAttribute "data-bind"
+          binds[name] = el
+        outletElements = element.querySelectorAll "[data-outlet]"
+        for el in outletElements
+          name = el.getAttribute "data-outlet"
+          outlets[name] = el
+          
+      for ev in ["click","dblclick","keypress","keydown","keyup","change"]
+        element.addEventListener ev, (e) =>
+          el = e.target
+          type = e.type
+          switch type
+            when "change"
+              name = el.getAttribute "data-bind"
+              if name and el.type isnt "checkbox"
+                @trigger "change",name,el.value,el
+                @trigger "change:#{name}",el.value,el
+            when "keydown"
+              action = el.getAttribute "data-enter"
+              if e.keyCode is 13 and action and @[action] then @[action](e)
+              action = el.getAttribute "data-keydown"
+              if @[action] then @[action](e)
+            when "click"
+              if el.type is "checkbox"
+                name = el.getAttribute "data-bind"
+                if name
+                  @trigger "change",name,el.checked,el
+                  @trigger "change:#{name}",el.checked,el
+            else
+              action = el.getAttribute "data-#{type}"
+              if @[action] then @[action](e)
+          e.stopPropagation()
+      rebuild()
       @set = (name,val) ->
         el = binds[name]
         if not el then return
         tag = el.tagName.toLowerCase() 
         if tag is "input" or tag is "textarea" or tag is "select"
+          if el.type is "checkbox" then el.checked = val
           el.value = val
         else 
           el.innerHTML = val
@@ -96,8 +117,9 @@
         if not el then return undefined
         tag = el.tagName.toLowerCase() 
         if tag is "input" or tag is "textarea" or tag is "select"
+          if el.type is "checkbox" then return el.checked
           return el.value
-        else 
+        else
           return el.innerHTML
       @html = (data) ->
         if not data then return element.innerHTML
@@ -113,7 +135,7 @@
         if view.insertInto
           @insertInto @,outlet
         else
-          outlets[name].appendChild view
+          outlets[outlet].appendChild view
       @remove = ->
         if element.parentNode
           element.parentNode.removeChild element
@@ -130,8 +152,9 @@
       if b then b.off "change",updatea
       a = newa
       b = newb
-      a.on "change",updateb = (key,val) -> b.set key,val
-      b.on "change",updatea = (key,val) -> a.set key,val
+      if a and b
+        a.on "change",updateb = (key,val) -> b.set key,val
+        b.on "change",updatea = (key,val) -> a.set key,val
     bind bind1[1],bind2[1] 
     return ->
       @[bind1[0]] = (newa) -> 
@@ -188,7 +211,8 @@
   class ViewModel extends Base
     constructor: (options={}) ->
       @is Binding(["model",options.model],["view",options.view])
-      options.view.set(key,val) for key,val of options.model.all()
+      if options.model
+        options.view.set(key,val) for key,val of options.model.all()
       @mixin options, ["model","view"]
   
   class ViewCollection extends Base

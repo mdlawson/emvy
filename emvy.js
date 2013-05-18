@@ -107,45 +107,80 @@
       };
     };
     Element = function(tag, html) {
-      var binds, element, outlets, rebuild;
+      var binds, element, outlets;
 
       element = document.createElement(tag || "div");
       element.innerHTML = html || "";
       binds = {};
       outlets = {};
-      rebuild = function() {
-        var bindElements, el, name, _i, _j, _len, _len1, _results;
-
-        bindElements = element.querySelectorAll("[data-bind]");
-        for (_i = 0, _len = bindElements.length; _i < _len; _i++) {
-          el = bindElements[_i];
-          name = el.getAttribute("data-bind");
-          binds[name] = el;
-        }
-        outlets = element.querySelectorAll("[data-outlet]");
-        _results = [];
-        for (_j = 0, _len1 = outlets.length; _j < _len1; _j++) {
-          el = outlets[_j];
-          name = el.getAttribute("data-outlet");
-          _results.push(outlets[name] = el);
-        }
-        return _results;
-      };
-      rebuild();
       return function() {
-        var _this = this;
+        var ev, rebuild, _i, _len, _ref,
+          _this = this;
 
         this.is(Evented());
-        element.addEventListener("change", function(e) {
-          var el, name;
+        rebuild = function() {
+          var bindElements, el, name, outletElements, _i, _j, _len, _len1, _results;
 
-          el = e.target;
-          name = el.getAttribute("data-bind");
-          if (name) {
-            _this.trigger("change", name, el.value, el);
-            return _this.trigger("change:" + name, el.value, el);
+          bindElements = element.querySelectorAll("[data-bind]");
+          for (_i = 0, _len = bindElements.length; _i < _len; _i++) {
+            el = bindElements[_i];
+            name = el.getAttribute("data-bind");
+            binds[name] = el;
           }
-        });
+          outletElements = element.querySelectorAll("[data-outlet]");
+          _results = [];
+          for (_j = 0, _len1 = outletElements.length; _j < _len1; _j++) {
+            el = outletElements[_j];
+            name = el.getAttribute("data-outlet");
+            _results.push(outlets[name] = el);
+          }
+          return _results;
+        };
+        _ref = ["click", "dblclick", "keypress", "keydown", "keyup", "change"];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ev = _ref[_i];
+          element.addEventListener(ev, function(e) {
+            var action, el, name, type;
+
+            el = e.target;
+            type = e.type;
+            switch (type) {
+              case "change":
+                name = el.getAttribute("data-bind");
+                if (name && el.type !== "checkbox") {
+                  _this.trigger("change", name, el.value, el);
+                  _this.trigger("change:" + name, el.value, el);
+                }
+                break;
+              case "keydown":
+                action = el.getAttribute("data-enter");
+                if (e.keyCode === 13 && action && _this[action]) {
+                  _this[action](e);
+                }
+                action = el.getAttribute("data-keydown");
+                if (_this[action]) {
+                  _this[action](e);
+                }
+                break;
+              case "click":
+                if (el.type === "checkbox") {
+                  name = el.getAttribute("data-bind");
+                  if (name) {
+                    _this.trigger("change", name, el.checked, el);
+                    _this.trigger("change:" + name, el.checked, el);
+                  }
+                }
+                break;
+              default:
+                action = el.getAttribute("data-" + type);
+                if (_this[action]) {
+                  _this[action](e);
+                }
+            }
+            return e.stopPropagation();
+          });
+        }
+        rebuild();
         this.set = function(name, val) {
           var el;
 
@@ -155,6 +190,9 @@
           }
           tag = el.tagName.toLowerCase();
           if (tag === "input" || tag === "textarea" || tag === "select") {
+            if (el.type === "checkbox") {
+              el.checked = val;
+            }
             return el.value = val;
           } else {
             return el.innerHTML = val;
@@ -169,6 +207,9 @@
           }
           tag = el.tagName.toLowerCase();
           if (tag === "input" || tag === "textarea" || tag === "select") {
+            if (el.type === "checkbox") {
+              return el.checked;
+            }
             return el.value;
           } else {
             return el.innerHTML;
@@ -195,7 +236,7 @@
           if (view.insertInto) {
             return this.insertInto(this, outlet);
           } else {
-            return outlets[name].appendChild(view);
+            return outlets[outlet].appendChild(view);
           }
         };
         this.remove = function() {
@@ -237,12 +278,14 @@
         }
         a = newa;
         b = newb;
-        a.on("change", updateb = function(key, val) {
-          return b.set(key, val);
-        });
-        return b.on("change", updatea = function(key, val) {
-          return a.set(key, val);
-        });
+        if (a && b) {
+          a.on("change", updateb = function(key, val) {
+            return b.set(key, val);
+          });
+          return b.on("change", updatea = function(key, val) {
+            return a.set(key, val);
+          });
+        }
       };
       bind(bind1[1], bind2[1]);
       return function() {
@@ -389,10 +432,12 @@
           options = {};
         }
         this.is(Binding(["model", options.model], ["view", options.view]));
-        _ref = options.model.all();
-        for (key in _ref) {
-          val = _ref[key];
-          options.view.set(key, val);
+        if (options.model) {
+          _ref = options.model.all();
+          for (key in _ref) {
+            val = _ref[key];
+            options.view.set(key, val);
+          }
         }
         this.mixin(options, ["model", "view"]);
       }
