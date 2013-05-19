@@ -9,7 +9,7 @@
   
   Evented = ->
     callbacks = {}
-    #pipes = []
+    subscribers = []
     return ->
       @on = (action, callback) ->
         actions = action.split " "
@@ -21,11 +21,11 @@
         @on action, cb = ->
           @off action, cb
           callback.apply @, arguments
-      @trigger = (action, args...) ->
-        # for pipe in pipes
-        #   pipe.trigger.apply pipe,arguments
+      @trigger = (action, args...) ->  
         actions = action.split " "
         for action in actions
+          for sub in subscribers
+            sub action, args...
           if callbacks[action] then for callback in callbacks[action]
             if callback.apply(@, args) is false then break
         return @
@@ -43,11 +43,11 @@
               for item, i in cbs when item is callback
                 cbs.splice i, 1
         return @
-      # @pipe = (to,remove) ->
-      #   unless remove
-      #     pipes.push to
-      #   else
-      #     pipes.splice pipes.indexOf(to),1
+      @subscribe = (me) ->
+        subscribers.push me
+      @unsubscribe = (me) ->
+        index = subscribers.indexOf(me)
+        if index then subscribers.splice index,1
 
   
   Attributed = (attributes={}) ->
@@ -71,7 +71,8 @@
         bindElements = element.querySelectorAll "[data-bind]"
         for el in bindElements
           name = el.getAttribute "data-bind"
-          binds[name] = el
+          binds[name] ?= []
+          binds[name].push el
         outletElements = element.querySelectorAll "[data-outlet]"
         for el in outletElements
           name = el.getAttribute "data-outlet"
@@ -107,17 +108,18 @@
           e.stopPropagation()
       rebuild()
       @set = (name,val) ->
-        el = binds[name]
-        if not el then return
-        tag = el.tagName.toLowerCase() 
-        if tag is "input" or tag is "textarea" or tag is "select"
-          if el.type is "checkbox" then el.checked = val
-          el.value = val
-        else 
-          el.innerHTML = val
+        els = binds[name]
+        if not (els and els.length) then return
+        for el in els
+          tag = el.tagName.toLowerCase() 
+          if tag is "input" or tag is "textarea" or tag is "select"
+            if el.type is "checkbox" then el.checked = val
+            el.value = val
+          else 
+            el.innerHTML = val
       @get = (name) -> 
-        el = binds[name]
-        if not el then return undefined
+        els = binds[name]
+        if not (els and el = els[0]) then return undefined
         tag = el.tagName.toLowerCase() 
         if tag is "input" or tag is "textarea" or tag is "select"
           if el.type is "checkbox" then return el.checked
@@ -128,7 +130,7 @@
         if not data then return element.innerHTML
         element.innerHTML = data or ""
         rebuild()
-        @trigger "reset"
+        @trigger "reset",@
       @insertInto = (view,outlet) ->
         if typeof view is "string"
           el = document.querySelector view
@@ -150,41 +152,54 @@
           while el.firstChild
             el.removeChild el.firstChild
 
-  Binding = (bind1,bind2) ->
-    a = b = updatea = updateb = resetb = null  
-    bind = (newa,newb) ->
-      if a then a.off "change",updateb
-      if b then b.off "change",updatea
-      if b then b.off "reset",resetb
-      a = newa
-      b = newb
-      if a and b
-        a.on "change",updateb = (key,val) -> b.set key,val
-        b.on "change",updatea = (key,val) -> a.set key,val
-        b.on "reset",resetb = -> 
-          for key,val of a.all()
-            b.set key,val
-    bind bind1[1],bind2[1] 
-    return ->
-      @[bind1[0]] = (newa) -> 
-        if newa
-          bind newa,bind2[1]
-        else return a
-      @[bind2[0]] = (newb) -> 
-        if newb 
-          bind bind1[1],newb
-        else return b
-  
-  Hiding = (prop,set,get) ->
+  Hiding = (prop,val,set,get) ->
     value = null
-    if not get then get = -> value
-    if not set then set = (newval) -> newval
     return ->
       @[prop] = (newval) ->
-        unless newval then return get.call(@,value)
+        #console.log value,newval
+        unless newval 
+          return if get then get.call(@,value) else value
         else 
-          value = set.call(@,value,newval)
+          value = if set then set.call(@,value,newval) else newval
           return @
+      @[prop](val)
+
+  Bubbling = (uptype,downtype,up) ->
+    computeds = {}
+    deps = {}
+    return ->
+      that = @
+      down = (ev, args...) ->
+        parts = ev.split "."
+        if parts[0] is downtype
+          #console.log "Going down!",ev, args...
+          that.trigger ev,args...
+      @up = (newup) -> 
+        if newup
+          if up then up.unsubscribe down
+          up = newup
+          up.subscribe down 
+        else return up
+      @up up  
+      @subscribe (ev, args...) ->
+        if up
+          parts = ev.split "." 
+          if parts[0] isnt downtype
+            #console.log "Going up!",ev, args...
+            up.trigger "#{uptype}.#{ev}",args...
+      # @computed = (name,func,deps) ->
+      #   if func
+      #     computeds[name] = func
+      #     for dep in depts
+      #       @on "change", ->
+      #         @trigger "computed.change",name,computeds[name].call @
+      #   else if computeds[name]
+      #     return computeds[name].call @  
+      #   else if up and up.computed
+      #     return up.computed(name)
+      #   else
+      #     return undefined
+
 
   class Base
     @is: (type) -> type.call @ 
@@ -194,6 +209,12 @@
   class Model extends Base
     constructor: (data={}) ->
       @is Attributed(@constructor.add(data))
+      @is Bubbling "model","view"
+      @on "view.change", (key,val) =>
+        @set key,val
+      @on "view.reset", (view) =>
+        for key,val of @all()
+          view.set key,val
       @constructor.trigger "add",@
     @init: ->
       @is Evented()
@@ -215,13 +236,21 @@
   class View extends Base
     constructor: (options={}) ->
       @is Element (options.tag or @tag),(options.html or @html)
+      @is Bubbling "view","model"
       @mixin options, ["tag","html"]
+      @on "model.change computed.change", (key,val) =>
+        @set key,val
 
   class ViewModel extends Base
     constructor: (options={}) ->
-      @is Binding(["model",options.model],["view",options.view])
-      if options.model
-        options.view.set(key,val) for key,val of options.model.all()
+      @is Evented()
+      setter = (old,val) -> 
+        old and old.up null
+        val.up @
+        return val
+      @is Hiding("model",options.model,setter)
+      @is Hiding("view",options.view,setter)
+      options.view.trigger "reset",options.view
       @mixin options, ["model","view"]
   
   class ViewCollection extends Base
@@ -242,7 +271,7 @@
         @parent.clean @outlet
         if data
           add(model) for model in data
-      @is Hiding "model", (old,model) ->
+      @is Hiding "model", options.model,(old,model) ->
         if old 
           old.off "add",add
           old.off "remove",remove
@@ -250,7 +279,7 @@
         model.on "add",add
         model.on "remove",remove
         model.on "reset",reset
-      @model options.model
+        return model
 
 
   return {

@@ -17,7 +17,6 @@ class AppView extends emvy.View
     new Todo(todo: @get "todo")
     @set "todo",""
   clear: ->
-    console.log Todo.all()
     for todo in Todo.all()
       if todo.done then Todo.remove todo
 

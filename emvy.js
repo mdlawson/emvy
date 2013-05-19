@@ -14,12 +14,13 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Base, Binding, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel;
+    var Attributed, Base, Bubbling, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel;
 
     Evented = function() {
-      var callbacks;
+      var callbacks, subscribers;
 
       callbacks = {};
+      subscribers = [];
       return function() {
         this.on = function(action, callback) {
           var actions, _i, _len;
@@ -41,16 +42,20 @@
           });
         };
         this.trigger = function() {
-          var action, actions, args, callback, _i, _j, _len, _len1, _ref;
+          var action, actions, args, callback, sub, _i, _j, _k, _len, _len1, _len2, _ref;
 
           action = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
           actions = action.split(" ");
           for (_i = 0, _len = actions.length; _i < _len; _i++) {
             action = actions[_i];
+            for (_j = 0, _len1 = subscribers.length; _j < _len1; _j++) {
+              sub = subscribers[_j];
+              sub.apply(null, [action].concat(__slice.call(args)));
+            }
             if (callbacks[action]) {
               _ref = callbacks[action];
-              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                callback = _ref[_j];
+              for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
+                callback = _ref[_k];
                 if (callback.apply(this, args) === false) {
                   break;
                 }
@@ -59,7 +64,7 @@
           }
           return this;
         };
-        return this.off = function(action, callback) {
+        this.off = function(action, callback) {
           var actions, cbs, i, item, _i, _j, _len, _len1;
 
           if (!action) {
@@ -84,6 +89,17 @@
             }
           }
           return this;
+        };
+        this.subscribe = function(me) {
+          return subscribers.push(me);
+        };
+        return this.unsubscribe = function(me) {
+          var index;
+
+          index = subscribers.indexOf(me);
+          if (index) {
+            return subscribers.splice(index, 1);
+          }
         };
       };
     };
@@ -119,13 +135,16 @@
 
         this.is(Evented());
         rebuild = function() {
-          var bindElements, el, name, outletElements, _i, _j, _len, _len1, _results;
+          var bindElements, el, name, outletElements, _i, _j, _len, _len1, _ref, _results;
 
           bindElements = element.querySelectorAll("[data-bind]");
           for (_i = 0, _len = bindElements.length; _i < _len; _i++) {
             el = bindElements[_i];
             name = el.getAttribute("data-bind");
-            binds[name] = el;
+            if ((_ref = binds[name]) == null) {
+              binds[name] = [];
+            }
+            binds[name].push(el);
           }
           outletElements = element.querySelectorAll("[data-outlet]");
           _results = [];
@@ -187,27 +206,32 @@
         }
         rebuild();
         this.set = function(name, val) {
-          var el;
+          var el, els, _j, _len1, _results;
 
-          el = binds[name];
-          if (!el) {
+          els = binds[name];
+          if (!(els && els.length)) {
             return;
           }
-          tag = el.tagName.toLowerCase();
-          if (tag === "input" || tag === "textarea" || tag === "select") {
-            if (el.type === "checkbox") {
-              el.checked = val;
+          _results = [];
+          for (_j = 0, _len1 = els.length; _j < _len1; _j++) {
+            el = els[_j];
+            tag = el.tagName.toLowerCase();
+            if (tag === "input" || tag === "textarea" || tag === "select") {
+              if (el.type === "checkbox") {
+                el.checked = val;
+              }
+              _results.push(el.value = val);
+            } else {
+              _results.push(el.innerHTML = val);
             }
-            return el.value = val;
-          } else {
-            return el.innerHTML = val;
           }
+          return _results;
         };
         this.get = function(name) {
-          var el;
+          var el, els;
 
-          el = binds[name];
-          if (!el) {
+          els = binds[name];
+          if (!(els && (el = els[0]))) {
             return void 0;
           }
           tag = el.tagName.toLowerCase();
@@ -226,7 +250,7 @@
           }
           element.innerHTML = data || "";
           rebuild();
-          return this.trigger("reset");
+          return this.trigger("reset", this);
         };
         this.insertInto = function(view, outlet) {
           var el;
@@ -271,83 +295,67 @@
         };
       };
     };
-    Binding = function(bind1, bind2) {
-      var a, b, bind, resetb, updatea, updateb;
-
-      a = b = updatea = updateb = resetb = null;
-      bind = function(newa, newb) {
-        if (a) {
-          a.off("change", updateb);
-        }
-        if (b) {
-          b.off("change", updatea);
-        }
-        if (b) {
-          b.off("reset", resetb);
-        }
-        a = newa;
-        b = newb;
-        if (a && b) {
-          a.on("change", updateb = function(key, val) {
-            return b.set(key, val);
-          });
-          b.on("change", updatea = function(key, val) {
-            return a.set(key, val);
-          });
-          return b.on("reset", resetb = function() {
-            var key, val, _ref, _results;
-
-            _ref = a.all();
-            _results = [];
-            for (key in _ref) {
-              val = _ref[key];
-              _results.push(b.set(key, val));
-            }
-            return _results;
-          });
-        }
-      };
-      bind(bind1[1], bind2[1]);
-      return function() {
-        this[bind1[0]] = function(newa) {
-          if (newa) {
-            return bind(newa, bind2[1]);
-          } else {
-            return a;
-          }
-        };
-        return this[bind2[0]] = function(newb) {
-          if (newb) {
-            return bind(bind1[1], newb);
-          } else {
-            return b;
-          }
-        };
-      };
-    };
-    Hiding = function(prop, set, get) {
+    Hiding = function(prop, val, set, get) {
       var value;
 
       value = null;
-      if (!get) {
-        get = function() {
-          return value;
-        };
-      }
-      if (!set) {
-        set = function(newval) {
-          return newval;
-        };
-      }
       return function() {
-        return this[prop] = function(newval) {
+        this[prop] = function(newval) {
           if (!newval) {
-            return get.call(this, value);
+            if (get) {
+              return get.call(this, value);
+            } else {
+              return value;
+            }
           } else {
-            value = set.call(this, value, newval);
+            value = set ? set.call(this, value, newval) : newval;
             return this;
           }
         };
+        return this[prop](val);
+      };
+    };
+    Bubbling = function(uptype, downtype, up) {
+      var computeds, deps;
+
+      computeds = {};
+      deps = {};
+      return function() {
+        var down, that;
+
+        that = this;
+        down = function() {
+          var args, ev, parts;
+
+          ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+          parts = ev.split(".");
+          if (parts[0] === downtype) {
+            return that.trigger.apply(that, [ev].concat(__slice.call(args)));
+          }
+        };
+        this.up = function(newup) {
+          if (newup) {
+            if (up) {
+              up.unsubscribe(down);
+            }
+            up = newup;
+            return up.subscribe(down);
+          } else {
+            return up;
+          }
+        };
+        this.up(up);
+        return this.subscribe(function() {
+          var args, ev, parts;
+
+          ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+          if (up) {
+            parts = ev.split(".");
+            if (parts[0] !== downtype) {
+              return up.trigger.apply(up, ["" + uptype + "." + ev].concat(__slice.call(args)));
+            }
+          }
+        });
       };
     };
     Base = (function() {
@@ -381,10 +389,27 @@
       __extends(Model, _super);
 
       function Model(data) {
+        var _this = this;
+
         if (data == null) {
           data = {};
         }
         this.is(Attributed(this.constructor.add(data)));
+        this.is(Bubbling("model", "view"));
+        this.on("view.change", function(key, val) {
+          return _this.set(key, val);
+        });
+        this.on("view.reset", function(view) {
+          var key, val, _ref, _results;
+
+          _ref = _this.all();
+          _results = [];
+          for (key in _ref) {
+            val = _ref[key];
+            _results.push(view.set(key, val));
+          }
+          return _results;
+        });
         this.constructor.trigger("add", this);
       }
 
@@ -432,11 +457,17 @@
       __extends(View, _super);
 
       function View(options) {
+        var _this = this;
+
         if (options == null) {
           options = {};
         }
         this.is(Element(options.tag || this.tag, options.html || this.html));
+        this.is(Bubbling("view", "model"));
         this.mixin(options, ["tag", "html"]);
+        this.on("model.change computed.change", function(key, val) {
+          return _this.set(key, val);
+        });
       }
 
       return View;
@@ -446,19 +477,20 @@
       __extends(ViewModel, _super);
 
       function ViewModel(options) {
-        var key, val, _ref;
+        var setter;
 
         if (options == null) {
           options = {};
         }
-        this.is(Binding(["model", options.model], ["view", options.view]));
-        if (options.model) {
-          _ref = options.model.all();
-          for (key in _ref) {
-            val = _ref[key];
-            options.view.set(key, val);
-          }
-        }
+        this.is(Evented());
+        setter = function(old, val) {
+          old && old.up(null);
+          val.up(this);
+          return val;
+        };
+        this.is(Hiding("model", options.model, setter));
+        this.is(Hiding("view", options.view, setter));
+        options.view.trigger("reset", options.view);
         this.mixin(options, ["model", "view"]);
       }
 
@@ -511,7 +543,7 @@
             return _results;
           }
         };
-        this.is(Hiding("model", function(old, model) {
+        this.is(Hiding("model", options.model, function(old, model) {
           if (old) {
             old.off("add", add);
             old.off("remove", remove);
@@ -519,9 +551,9 @@
           }
           model.on("add", add);
           model.on("remove", remove);
-          return model.on("reset", reset);
+          model.on("reset", reset);
+          return model;
         }));
-        this.model(options.model);
       }
 
       return ViewCollection;

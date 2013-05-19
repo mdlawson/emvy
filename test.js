@@ -63,7 +63,6 @@
     AppView.prototype.clear = function() {
       var todo, _i, _len, _ref3, _results;
 
-      console.log(Todo.all());
       _ref3 = Todo.all();
       _results = [];
       for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
