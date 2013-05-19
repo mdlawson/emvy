@@ -220,7 +220,8 @@
             return element.innerHTML;
           }
           element.innerHTML = data || "";
-          return rebuild();
+          rebuild();
+          return this.trigger("reset");
         };
         this.insertInto = function(view, outlet) {
           var el;
@@ -266,9 +267,9 @@
       };
     };
     Binding = function(bind1, bind2) {
-      var a, b, bind, updatea, updateb;
+      var a, b, bind, resetb, updatea, updateb;
 
-      a = b = updatea = updateb = null;
+      a = b = updatea = updateb = resetb = null;
       bind = function(newa, newb) {
         if (a) {
           a.off("change", updateb);
@@ -276,14 +277,28 @@
         if (b) {
           b.off("change", updatea);
         }
+        if (b) {
+          b.off("reset", resetb);
+        }
         a = newa;
         b = newb;
         if (a && b) {
           a.on("change", updateb = function(key, val) {
             return b.set(key, val);
           });
-          return b.on("change", updatea = function(key, val) {
+          b.on("change", updatea = function(key, val) {
             return a.set(key, val);
+          });
+          return b.on("reset", resetb = function() {
+            var key, val, _ref, _results;
+
+            _ref = a.all();
+            _results = [];
+            for (key in _ref) {
+              val = _ref[key];
+              _results.push(b.set(key, val));
+            }
+            return _results;
           });
         }
       };

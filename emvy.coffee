@@ -125,6 +125,7 @@
         if not data then return element.innerHTML
         element.innerHTML = data or ""
         rebuild()
+        @trigger "reset"
       @insertInto = (view,outlet) ->
         if typeof view is "string"
           el = document.querySelector view
@@ -145,16 +146,21 @@
           el = outlets[outlet]
           while el.firstChild
             el.removeChild el.firstChild
+
   Binding = (bind1,bind2) ->
-    a = b = updatea = updateb = null  
+    a = b = updatea = updateb = resetb = null  
     bind = (newa,newb) ->
       if a then a.off "change",updateb
       if b then b.off "change",updatea
+      if b then b.off "reset",resetb
       a = newa
       b = newb
       if a and b
         a.on "change",updateb = (key,val) -> b.set key,val
         b.on "change",updatea = (key,val) -> a.set key,val
+        b.on "reset",resetb = -> 
+          for key,val of a.all()
+            b.set key,val
     bind bind1[1],bind2[1] 
     return ->
       @[bind1[0]] = (newa) -> 

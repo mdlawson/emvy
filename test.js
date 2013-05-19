@@ -26,9 +26,18 @@
       return _ref1;
     }
 
-    TodoView.prototype.html = '<input type="checkbox" data-bind="done"><b data-bind="todo"></b>';
+    TodoView.prototype.html = '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="edit"></b>';
 
     TodoView.prototype.tag = "li";
+
+    TodoView.prototype.edit = function() {
+      this.original = this.html();
+      return this.html('<span><input data-enter="commit" data-bind="todo"></span>');
+    };
+
+    TodoView.prototype.commit = function() {
+      return this.html(this.original);
+    };
 
     return TodoView;
 
@@ -42,7 +51,7 @@
       return _ref2;
     }
 
-    AppView.prototype.html = '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul>';
+    AppView.prototype.html = '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul>Double-click to edit';
 
     AppView.prototype.submit = function() {
       new Todos({
