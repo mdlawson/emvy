@@ -1,5 +1,5 @@
-class Todos extends emvy.Model
-Todos.init()
+class Todo extends emvy.Model
+Todo.init()
 
 
 class TodoView extends emvy.View
@@ -12,15 +12,20 @@ class TodoView extends emvy.View
     @html(@original)
 
 class AppView extends emvy.View
-  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul>Double-click to edit'
+  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul>Double-click to edit. <u data-click="clear">clear done</u>'
   submit: ->
-    new Todos(todo: @get "todo")
+    new Todo(todo: @get "todo")
     @set "todo",""
+  clear: ->
+    console.log Todo.all()
+    for todo in Todo.all()
+      if todo.done then Todo.remove todo
+
 
 app = new AppView
 app.insertInto "body"
 
-todos = new emvy.ViewCollection(model:Todos,view:TodoView,parent:app,outlet:"todos")
+todosView = new emvy.ViewCollection(model:Todo,view:TodoView,parent:app,outlet:"todos")
 
 window.app = app
-window.Todos = Todos
+window.Todo = Todo

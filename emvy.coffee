@@ -98,6 +98,9 @@
                 if name
                   @trigger "change",name,el.checked,el
                   @trigger "change:#{name}",el.checked,el
+              else
+                action = el.getAttribute "data-click"
+                if @[action] then @[action](e)
             else
               action = el.getAttribute "data-#{type}"
               if @[action] then @[action](e)
@@ -206,7 +209,7 @@
         models = []
         new @(item) for item in data
         @trigger "reset",models
-      @all = -> return models
+      @all = -> return models.slice 0
       return @
 
   class View extends Base
@@ -230,7 +233,7 @@
         viewmodels[model.get("id")] = new ViewModel({model:model,view:view})
         if @parent then view.insertInto(@parent,@outlet)
       remove = (model) =>
-        id = model.get("id")
+        id = model.id
         viewmodel = viewmodels[id]
         viewmodel.view().remove()
         delete viewmodels[id]

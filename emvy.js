@@ -169,6 +169,11 @@
                     _this.trigger("change", name, el.checked, el);
                     _this.trigger("change:" + name, el.checked, el);
                   }
+                } else {
+                  action = el.getAttribute("data-click");
+                  if (_this[action]) {
+                    _this[action](e);
+                  }
                 }
                 break;
               default:
@@ -415,7 +420,7 @@
           return this.trigger("reset", models);
         };
         this.all = function() {
-          return models;
+          return models.slice(0);
         };
         return this;
       };
@@ -487,7 +492,7 @@
         remove = function(model) {
           var id, viewmodel;
 
-          id = model.get("id");
+          id = model.id;
           viewmodel = viewmodels[id];
           viewmodel.view().remove();
           return delete viewmodels[id];
