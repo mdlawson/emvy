@@ -7,10 +7,28 @@
     root.emvy = factory()
 ) this, ->
   
-  Evented = ->
+  Evented = (tag) ->
     callbacks = {}
-    subscribers = []
+    upstream = []
+    downstream = []
     return ->
+      that = @
+      @attach = (something,up,oneway) ->
+        unless up
+          downstream.push something
+          unless oneway
+            something.attach @,true
+        else
+          upstream.push something
+      @detach = (something,up,oneway) ->
+        unless up
+          index = downstream.indexOf something
+          downstream.splice index,1
+          unless oneway
+            something.detach @,true
+        else
+          index = upstream.indexOf something
+          upstream.splice index,1
       @on = (action, callback) ->
         actions = action.split " "
         for action in actions
@@ -21,14 +39,26 @@
         @on action, cb = ->
           @off action, cb
           callback.apply @, arguments
-      @trigger = (action, args...) ->  
+      @trigger = (action, args...) ->
+        #console.log action,args,"called on",that,"by",this
         actions = action.split " "
         for action in actions
-          for sub in subscribers
-            sub action, args...
+          resolved = false
           if callbacks[action] then for callback in callbacks[action]
-            if callback.apply(@, args) is false then break
-        return @
+            if callback.apply(that, args) is true then resolved = true
+          unless resolved
+            if tag 
+              parts = action.split ":"
+              if parts.length > 1 
+                parts[1] = tag + "." + parts[1]
+              else
+                parts[1] = tag
+              action = parts.join ":"
+            for item in downstream when item isnt @
+              if item.trigger.call(that,action,args...) is true then return true
+            for item in upstream when item isnt @
+              if item.trigger.call(that,action,args...) is true then return true
+        return resolved
       @off = (action, callback) ->
         if not action 
           callbacks = {}
@@ -43,16 +73,10 @@
               for item, i in cbs when item is callback
                 cbs.splice i, 1
         return @
-      @subscribe = (me) ->
-        subscribers.push me
-      @unsubscribe = (me) ->
-        index = subscribers.indexOf(me)
-        if index then subscribers.splice index,1
 
   
   Attributed = (attributes={}) ->
     return ->
-      @is Evented()
       @get = (key) -> attributes[key]
       @all = -> attributes
       @set = (key,value) ->
@@ -66,7 +90,6 @@
     binds = {}
     outlets = {}
     return ->
-      @is Evented()
       rebuild = =>
         bindElements = element.querySelectorAll "[data-bind]"
         for el in bindElements
@@ -164,42 +187,24 @@
           return @
       @[prop](val)
 
-  Bubbling = (uptype,downtype,up) ->
-    computeds = {}
-    deps = {}
+  Computing = ->
     return ->
-      that = @
-      down = (ev, args...) ->
-        parts = ev.split "."
-        if parts[0] is downtype
-          #console.log "Going down!",ev, args...
-          that.trigger ev,args...
-      @up = (newup) -> 
-        if newup
-          if up then up.unsubscribe down
-          up = newup
-          up.subscribe down 
-        else return up
-      @up up  
-      @subscribe (ev, args...) ->
-        if up
-          parts = ev.split "." 
-          if parts[0] isnt downtype
-            #console.log "Going up!",ev, args...
-            up.trigger "#{uptype}.#{ev}",args...
-      # @computed = (name,func,deps) ->
-      #   if func
-      #     computeds[name] = func
-      #     for dep in depts
-      #       @on "change", ->
-      #         @trigger "computed.change",name,computeds[name].call @
-      #   else if computeds[name]
-      #     return computeds[name].call @  
-      #   else if up and up.computed
-      #     return up.computed(name)
-      #   else
-      #     return undefined
+      @computed = (name,func,deps) ->
+        @[name] = func
+        str = ""
+        change = =>
+          value = @[name]()
+          @trigger "change change:computed",name,value
+          @trigger "change:#{name} change:computed.#{name}",value
 
+        for dep in deps        
+          if (typeof dep is "function" and dep.type is "Model") or (typeof dep is "object" and dep.on)
+            dep.on "change", change
+            dep.on "change:model", change
+          else  
+            str += "change:#{dep} "
+        @on str, change
+        change()
 
   class Base
     @is: (type) -> type.call @ 
@@ -207,17 +212,23 @@
     mixin: (obj,ignore) -> @[key] = val for key, val of obj when key not in ignore
 
   class Model extends Base
+    @type = "Model"
     constructor: (data={}) ->
+      @is Evented "model"
+      @is Computing()
       @is Attributed(@constructor.add(data))
-      @is Bubbling "model","view"
-      @on "view.change", (key,val) =>
+      @on "change:view", (key,val) =>
         @set key,val
-      @on "view.reset", (view) =>
+        return true
+      @on "reset:view", (view) =>
         for key,val of @all()
           view.set key,val
+        return true
+      @attach @constructor,true
       @constructor.trigger "add",@
+      @constructor.trigger "change"
     @init: ->
-      @is Evented()
+      @is Evented "Model"
       models = []
       @add = (data) ->
         model = models[models.length] = {id:models.length}
@@ -226,30 +237,37 @@
       @remove = (model) ->
         @trigger "remove",model
         models.splice models.indexOf(model),1
+        @trigger "change"
       @reset = (data) ->
         models = []
         new @(item) for item in data
         @trigger "reset",models
+        @trigger "change"
       @all = -> return models.slice 0
       return @
 
   class View extends Base
     constructor: (options={}) ->
+      @is Evented "view"
       @is Element (options.tag or @tag),(options.html or @html)
-      @is Bubbling "view","model"
+      @is Computing()
       @mixin options, ["tag","html"]
-      @on "model.change computed.change", (key,val) =>
+      @on "change:model change:computed", (key,val) =>
         @set key,val
+        return true
 
   class ViewModel extends Base
     constructor: (options={}) ->
       @is Evented()
-      setter = (old,val) -> 
-        old and old.up null
-        val.up @
-        return val
-      @is Hiding("model",options.model,setter)
-      @is Hiding("view",options.view,setter)
+      @is Computing()
+      @attach options.model
+      @attach options.view
+      # setter = (old,val) -> 
+      #   old and old.up null
+      #   val.up @
+      #   return val
+      # @is Hiding("model",options.model,setter)
+      # @is Hiding("view",options.view,setter)
       options.view.trigger "reset",options.view
       @mixin options, ["model","view"]
   

@@ -14,14 +14,42 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Base, Bubbling, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel;
+    var Attributed, Base, Computing, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel;
 
-    Evented = function() {
-      var callbacks, subscribers;
+    Evented = function(tag) {
+      var callbacks, downstream, upstream;
 
       callbacks = {};
-      subscribers = [];
+      upstream = [];
+      downstream = [];
       return function() {
+        var that;
+
+        that = this;
+        this.attach = function(something, up, oneway) {
+          if (!up) {
+            downstream.push(something);
+            if (!oneway) {
+              return something.attach(this, true);
+            }
+          } else {
+            return upstream.push(something);
+          }
+        };
+        this.detach = function(something, up, oneway) {
+          var index;
+
+          if (!up) {
+            index = downstream.indexOf(something);
+            downstream.splice(index, 1);
+            if (!oneway) {
+              return something.detach(this, true);
+            }
+          } else {
+            index = upstream.indexOf(something);
+            return upstream.splice(index, 1);
+          }
+        };
         this.on = function(action, callback) {
           var actions, _i, _len;
 
@@ -42,29 +70,53 @@
           });
         };
         this.trigger = function() {
-          var action, actions, args, callback, sub, _i, _j, _k, _len, _len1, _len2, _ref;
+          var action, actions, args, callback, item, parts, resolved, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2;
 
           action = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
           actions = action.split(" ");
           for (_i = 0, _len = actions.length; _i < _len; _i++) {
             action = actions[_i];
-            for (_j = 0, _len1 = subscribers.length; _j < _len1; _j++) {
-              sub = subscribers[_j];
-              sub.apply(null, [action].concat(__slice.call(args)));
-            }
+            resolved = false;
             if (callbacks[action]) {
               _ref = callbacks[action];
-              for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
-                callback = _ref[_k];
-                if (callback.apply(this, args) === false) {
-                  break;
+              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                callback = _ref[_j];
+                if (callback.apply(that, args) === true) {
+                  resolved = true;
+                }
+              }
+            }
+            if (!resolved) {
+              if (tag) {
+                parts = action.split(":");
+                if (parts.length > 1) {
+                  parts[1] = tag + "." + parts[1];
+                } else {
+                  parts[1] = tag;
+                }
+                action = parts.join(":");
+              }
+              for (_k = 0, _len2 = downstream.length; _k < _len2; _k++) {
+                item = downstream[_k];
+                if (item !== this) {
+                  if ((_ref1 = item.trigger).call.apply(_ref1, [that, action].concat(__slice.call(args))) === true) {
+                    return true;
+                  }
+                }
+              }
+              for (_l = 0, _len3 = upstream.length; _l < _len3; _l++) {
+                item = upstream[_l];
+                if (item !== this) {
+                  if ((_ref2 = item.trigger).call.apply(_ref2, [that, action].concat(__slice.call(args))) === true) {
+                    return true;
+                  }
                 }
               }
             }
           }
-          return this;
+          return resolved;
         };
-        this.off = function(action, callback) {
+        return this.off = function(action, callback) {
           var actions, cbs, i, item, _i, _j, _len, _len1;
 
           if (!action) {
@@ -90,17 +142,6 @@
           }
           return this;
         };
-        this.subscribe = function(me) {
-          return subscribers.push(me);
-        };
-        return this.unsubscribe = function(me) {
-          var index;
-
-          index = subscribers.indexOf(me);
-          if (index) {
-            return subscribers.splice(index, 1);
-          }
-        };
       };
     };
     Attributed = function(attributes) {
@@ -108,7 +149,6 @@
         attributes = {};
       }
       return function() {
-        this.is(Evented());
         this.get = function(key) {
           return attributes[key];
         };
@@ -133,7 +173,6 @@
         var ev, rebuild, _i, _len, _ref,
           _this = this;
 
-        this.is(Evented());
         rebuild = function() {
           var bindElements, el, name, outletElements, _i, _j, _len, _len1, _ref, _results;
 
@@ -315,47 +354,33 @@
         return this[prop](val);
       };
     };
-    Bubbling = function(uptype, downtype, up) {
-      var computeds, deps;
-
-      computeds = {};
-      deps = {};
+    Computing = function() {
       return function() {
-        var down, that;
+        return this.computed = function(name, func, deps) {
+          var change, dep, str, _i, _len,
+            _this = this;
 
-        that = this;
-        down = function() {
-          var args, ev, parts;
+          this[name] = func;
+          str = "";
+          change = function() {
+            var value;
 
-          ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-          parts = ev.split(".");
-          if (parts[0] === downtype) {
-            return that.trigger.apply(that, [ev].concat(__slice.call(args)));
-          }
-        };
-        this.up = function(newup) {
-          if (newup) {
-            if (up) {
-              up.unsubscribe(down);
-            }
-            up = newup;
-            return up.subscribe(down);
-          } else {
-            return up;
-          }
-        };
-        this.up(up);
-        return this.subscribe(function() {
-          var args, ev, parts;
-
-          ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-          if (up) {
-            parts = ev.split(".");
-            if (parts[0] !== downtype) {
-              return up.trigger.apply(up, ["" + uptype + "." + ev].concat(__slice.call(args)));
+            value = _this[name]();
+            _this.trigger("change change:computed", name, value);
+            return _this.trigger("change:" + name + " change:computed." + name, value);
+          };
+          for (_i = 0, _len = deps.length; _i < _len; _i++) {
+            dep = deps[_i];
+            if ((typeof dep === "function" && dep.type === "Model") || (typeof dep === "object" && dep.on)) {
+              dep.on("change", change);
+              dep.on("change:model", change);
+            } else {
+              str += "change:" + dep + " ";
             }
           }
-        });
+          this.on(str, change);
+          return change();
+        };
       };
     };
     Base = (function() {
@@ -388,35 +413,40 @@
     Model = (function(_super) {
       __extends(Model, _super);
 
+      Model.type = "Model";
+
       function Model(data) {
         var _this = this;
 
         if (data == null) {
           data = {};
         }
+        this.is(Evented("model"));
+        this.is(Computing());
         this.is(Attributed(this.constructor.add(data)));
-        this.is(Bubbling("model", "view"));
-        this.on("view.change", function(key, val) {
-          return _this.set(key, val);
+        this.on("change:view", function(key, val) {
+          _this.set(key, val);
+          return true;
         });
-        this.on("view.reset", function(view) {
-          var key, val, _ref, _results;
+        this.on("reset:view", function(view) {
+          var key, val, _ref;
 
           _ref = _this.all();
-          _results = [];
           for (key in _ref) {
             val = _ref[key];
-            _results.push(view.set(key, val));
+            view.set(key, val);
           }
-          return _results;
+          return true;
         });
+        this.attach(this.constructor, true);
         this.constructor.trigger("add", this);
+        this.constructor.trigger("change");
       }
 
       Model.init = function() {
         var models;
 
-        this.is(Evented());
+        this.is(Evented("Model"));
         models = [];
         this.add = function(data) {
           var key, model, val;
@@ -432,7 +462,8 @@
         };
         this.remove = function(model) {
           this.trigger("remove", model);
-          return models.splice(models.indexOf(model), 1);
+          models.splice(models.indexOf(model), 1);
+          return this.trigger("change");
         };
         this.reset = function(data) {
           var item, _i, _len;
@@ -442,7 +473,8 @@
             item = data[_i];
             new this(item);
           }
-          return this.trigger("reset", models);
+          this.trigger("reset", models);
+          return this.trigger("change");
         };
         this.all = function() {
           return models.slice(0);
@@ -462,11 +494,13 @@
         if (options == null) {
           options = {};
         }
+        this.is(Evented("view"));
         this.is(Element(options.tag || this.tag, options.html || this.html));
-        this.is(Bubbling("view", "model"));
+        this.is(Computing());
         this.mixin(options, ["tag", "html"]);
-        this.on("model.change computed.change", function(key, val) {
-          return _this.set(key, val);
+        this.on("change:model change:computed", function(key, val) {
+          _this.set(key, val);
+          return true;
         });
       }
 
@@ -477,19 +511,13 @@
       __extends(ViewModel, _super);
 
       function ViewModel(options) {
-        var setter;
-
         if (options == null) {
           options = {};
         }
         this.is(Evented());
-        setter = function(old, val) {
-          old && old.up(null);
-          val.up(this);
-          return val;
-        };
-        this.is(Hiding("model", options.model, setter));
-        this.is(Hiding("view", options.view, setter));
+        this.is(Computing());
+        this.attach(options.model);
+        this.attach(options.view);
         options.view.trigger("reset", options.view);
         this.mixin(options, ["model", "view"]);
       }
