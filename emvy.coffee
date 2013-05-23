@@ -49,8 +49,10 @@
           unless resolved
             if tag 
               parts = action.split ":"
-              if parts.length > 1 
-                parts[1] = tag + "." + parts[1]
+              if parts.length > 1
+                path = parts[1].split "."
+                if path[0] isnt tag 
+                  parts[1] = tag + "." + parts[1]
               else
                 parts[1] = tag
               action = parts.join ":"
@@ -260,8 +262,6 @@
     constructor: (options={}) ->
       @is Evented()
       @is Computing()
-      # @attach options.model
-      # @attach options.view
       setter = (old,val) -> 
         old and old.detach @
         val.attach @
