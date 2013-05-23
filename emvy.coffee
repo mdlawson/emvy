@@ -260,14 +260,14 @@
     constructor: (options={}) ->
       @is Evented()
       @is Computing()
-      @attach options.model
-      @attach options.view
-      # setter = (old,val) -> 
-      #   old and old.up null
-      #   val.up @
-      #   return val
-      # @is Hiding("model",options.model,setter)
-      # @is Hiding("view",options.view,setter)
+      # @attach options.model
+      # @attach options.view
+      setter = (old,val) -> 
+        old and old.detach @
+        val.attach @
+        return val
+      @is Hiding("model",options.model,setter)
+      @is Hiding("view",options.view,setter)
       options.view.trigger "reset",options.view
       @mixin options, ["model","view"]
   

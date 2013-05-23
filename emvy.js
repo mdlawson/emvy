@@ -511,13 +511,20 @@
       __extends(ViewModel, _super);
 
       function ViewModel(options) {
+        var setter;
+
         if (options == null) {
           options = {};
         }
         this.is(Evented());
         this.is(Computing());
-        this.attach(options.model);
-        this.attach(options.view);
+        setter = function(old, val) {
+          old && old.detach(this);
+          val.attach(this);
+          return val;
+        };
+        this.is(Hiding("model", options.model, setter));
+        this.is(Hiding("view", options.view, setter));
         options.view.trigger("reset", options.view);
         this.mixin(options, ["model", "view"]);
       }
