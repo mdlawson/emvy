@@ -1,5 +1,5 @@
 ((root, factory) ->
-  if typeof exports is "object"
+  if typeof exports is "EObject"
     module.exports = factory()
   else if typeof define is "function" and define.amd
     define factory
@@ -200,7 +200,7 @@
           @trigger "change:#{name} change:computed.#{name}",value
 
         for dep in deps        
-          if (typeof dep is "function" and dep.type is "Model") or (typeof dep is "object" and dep.on)
+          if (typeof dep is "function" and dep.type is "Model") or (typeof dep is "EObject" and dep.on)
             dep.on "change", change
             dep.on "change:model", change
           else  
@@ -208,12 +208,27 @@
         @on str, change
         change()
 
-  class Base
-    @is: (type) -> type.call @ 
-    is: (type) -> type.call @
+  components = {
+    Computing: Computing
+    Hiding: Hiding
+    Element: Element
+    Attributed: Attributed
+    Evented: Evented
+  }
+
+  load = (component,args...) ->
+    if typeof component is "string"
+      components[component](args...).call @
+    else
+      component.call @
+    return @
+
+  class EObject
+    @is: load 
+    is: load
     mixin: (obj,ignore) -> @[key] = val for key, val of obj when key not in ignore
 
-  class Model extends Base
+  class Model extends EObject
     @type = "Model"
     constructor: (data={}) ->
       @is Evented "model"
@@ -248,7 +263,7 @@
       @all = -> return models.slice 0
       return @
 
-  class View extends Base
+  class View extends EObject
     constructor: (options={}) ->
       @is Evented "view"
       @is Element (options.tag or @tag),(options.html or @html)
@@ -258,7 +273,7 @@
         @set key,val
         return true
 
-  class ViewModel extends Base
+  class ViewModel extends EObject
     constructor: (options={}) ->
       @is Evented()
       @is Computing()
@@ -271,7 +286,7 @@
       options.view.trigger "reset",options.view
       @mixin options, ["model","view"]
   
-  class ViewCollection extends Base
+  class ViewCollection extends EObject
     constructor: (options={}) ->
       @mixin options, ["model"]
       viewmodels = {}
@@ -301,6 +316,7 @@
 
 
   return {
+    Object: EObject
     Model: Model
     View: View
     ViewModel: ViewModel

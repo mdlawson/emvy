@@ -6,7 +6,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   (function(root, factory) {
-    if (typeof exports === "object") {
+    if (typeof exports === "EObject") {
       return module.exports = factory();
     } else if (typeof define === "function" && define.amd) {
       return define(factory);
@@ -14,7 +14,7 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Base, Computing, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel;
+    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel, components, load;
 
     Evented = function(tag) {
       var callbacks, downstream, upstream;
@@ -374,7 +374,7 @@
           };
           for (_i = 0, _len = deps.length; _i < _len; _i++) {
             dep = deps[_i];
-            if ((typeof dep === "function" && dep.type === "Model") || (typeof dep === "object" && dep.on)) {
+            if ((typeof dep === "function" && dep.type === "Model") || (typeof dep === "EObject" && dep.on)) {
               dep.on("change", change);
               dep.on("change:model", change);
             } else {
@@ -386,18 +386,32 @@
         };
       };
     };
-    Base = (function() {
-      function Base() {}
+    components = {
+      Computing: Computing,
+      Hiding: Hiding,
+      Element: Element,
+      Attributed: Attributed,
+      Evented: Evented
+    };
+    load = function() {
+      var args, component;
 
-      Base.is = function(type) {
-        return type.call(this);
-      };
+      component = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      if (typeof component === "string") {
+        components[component].apply(components, args).call(this);
+      } else {
+        component.call(this);
+      }
+      return this;
+    };
+    EObject = (function() {
+      function EObject() {}
 
-      Base.prototype.is = function(type) {
-        return type.call(this);
-      };
+      EObject.is = load;
 
-      Base.prototype.mixin = function(obj, ignore) {
+      EObject.prototype.is = load;
+
+      EObject.prototype.mixin = function(obj, ignore) {
         var key, val, _results;
 
         _results = [];
@@ -410,7 +424,7 @@
         return _results;
       };
 
-      return Base;
+      return EObject;
 
     })();
     Model = (function(_super) {
@@ -487,7 +501,7 @@
 
       return Model;
 
-    })(Base);
+    })(EObject);
     View = (function(_super) {
       __extends(View, _super);
 
@@ -509,7 +523,7 @@
 
       return View;
 
-    })(Base);
+    })(EObject);
     ViewModel = (function(_super) {
       __extends(ViewModel, _super);
 
@@ -534,7 +548,7 @@
 
       return ViewModel;
 
-    })(Base);
+    })(EObject);
     ViewCollection = (function(_super) {
       __extends(ViewCollection, _super);
 
@@ -596,8 +610,9 @@
 
       return ViewCollection;
 
-    })(Base);
+    })(EObject);
     return {
+      Object: EObject,
       Model: Model,
       View: View,
       ViewModel: ViewModel,
