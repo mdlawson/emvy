@@ -1,3 +1,5 @@
+emvy.Router()
+
 class Todo extends emvy.Model
 Todo.init()
 

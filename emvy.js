@@ -14,7 +14,7 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, View, ViewCollection, ViewModel, components, load;
+    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, Router, View, ViewCollection, ViewModel, components, load;
 
     Evented = function(tag) {
       var callbacks, downstream, upstream;
@@ -86,7 +86,7 @@
                 }
               }
             }
-            if (!resolved) {
+            if (!(resolved || !(upstream.length || downstream.length))) {
               if (tag) {
                 parts = action.split(":");
                 if (parts.length > 1) {
@@ -611,13 +611,64 @@
       return ViewCollection;
 
     })(EObject);
+    Router = function(options) {
+      if (options == null) {
+        options = {};
+      }
+      return (function() {
+        var emitEvents, oldparts, root,
+          _this = this;
+
+        root = options.root;
+        oldparts = void 0;
+        Evented().call(this);
+        emitEvents = function() {
+          var i, parts, path, post, pre;
+
+          path = window.location.pathname;
+          if (options.root) {
+            if (!path.indexOf(root)) {
+              path = path.substr(root.length);
+            }
+          }
+          parts = path.split("/").slice(1);
+          i = 0;
+          while (i < parts.length) {
+            pre = parts.slice(0, i);
+            post = parts.slice(i);
+            post.unshift("route:" + pre.join("."));
+            console.log(post);
+            _this.trigger.apply(_this, post);
+            i++;
+          }
+          return oldparts = parts;
+        };
+        this.navigate = function(url) {
+          var oldpath;
+
+          oldpath = window.location.pathname;
+          history.pushState({}, document.title, url);
+          return emitEvents();
+        };
+        return window.addEventListener("popstate", emitEvents);
+      }).call(Router);
+    };
     return {
       Object: EObject,
+      Router: Router,
       Model: Model,
       View: View,
       ViewModel: ViewModel,
       ViewCollection: ViewCollection
     };
   });
+
+  /*
+  
+  TODO:
+  - Stated component, implements Finite State Machine
+  - Router, Top level, singleton FSM, triggers events.
+  */
+
 
 }).call(this);

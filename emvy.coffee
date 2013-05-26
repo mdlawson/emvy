@@ -46,7 +46,7 @@
           resolved = false
           if callbacks[action] then for callback in callbacks[action]
             if callback.apply(that, args) is true then resolved = true
-          unless resolved
+          unless resolved or not (upstream.length or downstream.length)
             if tag 
               parts = action.split ":"
               if parts.length > 1
@@ -313,10 +313,43 @@
         model.on "remove",remove
         model.on "reset",reset
         return model
+  
+  Router = (options={}) ->
+    (->
+      root = options.root
+      oldparts = undefined
+      Evented().call @
+      emitEvents = =>
+        path = window.location.pathname
+        if options.root 
+          if not path.indexOf(root) then path = path.substr root.length
+        parts = path.split("/")[1..]
+        # console.log "oldparts",oldparts
+        # if oldparts
+        #   while oldparts[0] is parts[0]
+        #     oldparts.shift()
+        #     parts.shift()
+        # console.log path,parts
+        i = 0
+        while i < parts.length
+          pre = parts[0...i]
+          post = parts[i..]
+          post.unshift("route:"+pre.join("."))
+          console.log post
+          @trigger.apply(@,post)
+          i++
+        oldparts = parts
+      @navigate = (url) ->
+        oldpath = window.location.pathname
+        history.pushState {},document.title,url
+        emitEvents()
+      window.addEventListener "popstate", emitEvents
+    ).call Router
 
 
   return {
     Object: EObject
+    Router: Router
     Model: Model
     View: View
     ViewModel: ViewModel
@@ -324,3 +357,9 @@
   }
 
 
+###
+
+TODO:
+- Stated component, implements Finite State Machine
+- Router, Top level, singleton FSM, triggers events.
+###
