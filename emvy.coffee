@@ -1,5 +1,5 @@
 ((root, factory) ->
-  if typeof exports is "EObject"
+  if typeof exports is "object"
     module.exports = factory()
   else if typeof define is "function" and define.amd
     define factory
@@ -200,7 +200,7 @@
           @trigger "change:#{name} change:computed.#{name}",value
 
         for dep in deps        
-          if (typeof dep is "function" and dep.type is "Model") or (typeof dep is "EObject" and dep.on)
+          if (typeof dep is "function" and dep.type is "Model") or (typeof dep is "object" and dep.on)
             dep.on "change", change
             dep.on "change:model", change
           else  
@@ -271,7 +271,6 @@
       @mixin options, ["tag","html"]
       @on "change:model change:computed", (key,val) =>
         @set key,val
-        return true
 
   class ViewModel extends EObject
     constructor: (options={}) ->
@@ -335,7 +334,6 @@
           pre = parts[0...i]
           post = parts[i..]
           post.unshift("route:"+pre.join("."))
-          console.log post
           @trigger.apply(@,post)
           i++
         oldparts = parts

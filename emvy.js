@@ -6,7 +6,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   (function(root, factory) {
-    if (typeof exports === "EObject") {
+    if (typeof exports === "object") {
       return module.exports = factory();
     } else if (typeof define === "function" && define.amd) {
       return define(factory);
@@ -374,7 +374,7 @@
           };
           for (_i = 0, _len = deps.length; _i < _len; _i++) {
             dep = deps[_i];
-            if ((typeof dep === "function" && dep.type === "Model") || (typeof dep === "EObject" && dep.on)) {
+            if ((typeof dep === "function" && dep.type === "Model") || (typeof dep === "object" && dep.on)) {
               dep.on("change", change);
               dep.on("change:model", change);
             } else {
@@ -516,8 +516,7 @@
         this.is(Computing());
         this.mixin(options, ["tag", "html"]);
         this.on("change:model change:computed", function(key, val) {
-          _this.set(key, val);
-          return true;
+          return _this.set(key, val);
         });
       }
 
@@ -637,7 +636,6 @@
             pre = parts.slice(0, i);
             post = parts.slice(i);
             post.unshift("route:" + pre.join("."));
-            console.log(post);
             _this.trigger.apply(_this, post);
             i++;
           }
