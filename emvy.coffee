@@ -125,6 +125,10 @@
                   @trigger "change",name,el.checked,el
                   @trigger "change:#{name}",el.checked,el
               else
+                link = el.getAttribute "data-link"
+                if link
+                  parts = link.split(" ")
+                  emvy.Router.navigate[parts[0]](parts[1])
                 action = el.getAttribute "data-click"
                 if @[action] then @[action](e)
             else
@@ -333,14 +337,28 @@
         while i < parts.length
           pre = parts[0...i]
           post = parts[i..]
-          post.unshift("route:"+pre.join("."))
+          post.unshift(pre.join("."))
           @trigger.apply(@,post)
           i++
         oldparts = parts
-      @navigate = (url) ->
-        oldpath = window.location.pathname
+      @navigate = {}
+      @navigate.to = (url) ->
         history.pushState {},document.title,url
         emitEvents()
+      @navigate.up = ->
+        path = window.location.pathname.split("/")
+        path.pop()
+        @to path.join("/")
+      @navigate.down = (to) ->
+        path = window.location.pathame.split("/")
+        path.push(to)
+        @trigger path[path.length-2],path[path.length-1]
+        @to path.join("/")
+      @navigate.across = (to) ->
+        path = window.location.pathname.split("/")
+        path[path.length-1] = to
+        @trigger path[path.length-2],path[path.length-1]
+        @to path.join("/")
       window.addEventListener "popstate", emitEvents
     ).call Router
 

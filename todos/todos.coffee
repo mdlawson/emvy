@@ -14,7 +14,7 @@ class TodoView extends emvy.View
     @html(@original)
 
 class AppView extends emvy.View
-  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u>'
+  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <a data-link="to /random">Random Link</a>'
   submit: ->
     new Todo(todo: @get "todo")
     @set "todo",""

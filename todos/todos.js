@@ -48,7 +48,7 @@
   AppView = (function(_super) {
     __extends(AppView, _super);
 
-    AppView.prototype.html = '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u>';
+    AppView.prototype.html = '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <a data-link="to /random">Random Link</a>';
 
     AppView.prototype.submit = function() {
       new Todo({

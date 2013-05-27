@@ -201,7 +201,7 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ev = _ref[_i];
           element.addEventListener(ev, function(e) {
-            var action, el, name, type;
+            var action, el, link, name, parts, type;
 
             el = e.target;
             type = e.type;
@@ -231,6 +231,11 @@
                     _this.trigger("change:" + name, el.checked, el);
                   }
                 } else {
+                  link = el.getAttribute("data-link");
+                  if (link) {
+                    parts = link.split(" ");
+                    emvy.Router.navigate[parts[0]](parts[1]);
+                  }
                   action = el.getAttribute("data-click");
                   if (_this[action]) {
                     _this[action](e);
@@ -635,18 +640,39 @@
           while (i < parts.length) {
             pre = parts.slice(0, i);
             post = parts.slice(i);
-            post.unshift("route:" + pre.join("."));
+            post.unshift(pre.join("."));
             _this.trigger.apply(_this, post);
             i++;
           }
           return oldparts = parts;
         };
-        this.navigate = function(url) {
-          var oldpath;
-
-          oldpath = window.location.pathname;
+        this.navigate = {};
+        this.navigate.to = function(url) {
           history.pushState({}, document.title, url);
           return emitEvents();
+        };
+        this.navigate.up = function() {
+          var path;
+
+          path = window.location.pathname.split("/");
+          path.pop();
+          return this.to(path.join("/"));
+        };
+        this.navigate.down = function(to) {
+          var path;
+
+          path = window.location.pathame.split("/");
+          path.push(to);
+          this.trigger(path[path.length - 2], path[path.length - 1]);
+          return this.to(path.join("/"));
+        };
+        this.navigate.across = function(to) {
+          var path;
+
+          path = window.location.pathname.split("/");
+          path[path.length - 1] = to;
+          this.trigger(path[path.length - 2], path[path.length - 1]);
+          return this.to(path.join("/"));
         };
         return window.addEventListener("popstate", emitEvents);
       }).call(Router);
