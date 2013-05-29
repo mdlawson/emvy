@@ -4,14 +4,16 @@ Todo = emvy.Model.extend();
 Todo.init();
 
 TodoView = emvy.View.extend({
-  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="edit"></b>',
+  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing"></b>',
   tag: 'li',
-  edit: function(){
-    this.original = this.html();
-    this.html('<span><input data-enter="commit" data-bind="todo"></span>');
-  },
-  commit: function(){
-    this.html(this.original);
+  constructor: function(){
+    this.is("Stateful",{
+      editing: function(){
+        return {
+          html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
+        };
+      }
+    });
   }
 });
 

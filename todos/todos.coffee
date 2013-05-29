@@ -10,8 +10,8 @@ class TodoView extends emvy.View
   constructor: ->
     super
     @is "Stateful",
-      "editing": -> # using a state machine is a little over the top for this, but example aims to show off as much as possible.
-        "html": '<span><input data-enter="transition initial" data-bind="todo"></span>'
+      editing: -> # using a state machine is a little over the top for this, but example aims to show off as much as possible.
+        html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
 
 
 class AppView extends emvy.View
