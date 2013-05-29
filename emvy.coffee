@@ -412,7 +412,8 @@
         while i < parts.length
           pre = parts[0...i]
           post = parts[i..]
-          post.unshift(pre.join("."))
+          if pre.length
+            post.unshift(pre.join("."))
           @trigger.apply(@,post)
           i++
         oldparts = parts

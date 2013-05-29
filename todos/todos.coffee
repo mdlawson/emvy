@@ -22,7 +22,7 @@ class AppView extends emvy.View
         <input data-enter="submit" data-bind="todo">
         <ul data-outlet="todos"></ul>
         <b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. 
-        <u data-click="clear">clear done</u> <u data-click="all">show all</u> <u data-click="active">show active</u> <u data-click="complete">show completed</u> 
+        <u data-click="clear">clear done</u> <u data-link="to /all">show all</u> <u data-link="to /active">show active</u> <u data-link="to /complete">show completed</u> 
         """
   submit: ->
     new Todo(todo: @get "todo")
@@ -30,12 +30,6 @@ class AppView extends emvy.View
   clear: ->
     for todo in Todo.all()
       if todo.get("done") then Todo.remove todo
-  all: ->
-    todosView.model Todo
-  active: ->
-    todosView.model Todo.mask "active"
-  complete: ->
-    todosView.model Todo.mask "complete"
   constructor: ->
     super
     @computed "remaining",->
@@ -51,6 +45,10 @@ app = new AppView
 app.insertInto "body"
 
 todosView = new emvy.ViewCollection(model:Todo,view:TodoView,parent:app,outlet:"todos")
+
+emvy.Router.on "active", -> todosView.model(Todo.mask "active")
+emvy.Router.on "complete", -> todosView.model(Todo.mask "complete")
+emvy.Router.on "all", -> todosView.model(Todo)
 
 window.app = app # these are exposed for debugging purposes
 window.todosView = todosView

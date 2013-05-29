@@ -56,7 +56,7 @@
   AppView = (function(_super) {
     __extends(AppView, _super);
 
-    AppView.prototype.html = "<input data-enter=\"submit\" data-bind=\"todo\">\n<ul data-outlet=\"todos\"></ul>\n<b>Remaining:<span data-bind=\"remaining\"></span></b> Double-click to edit. \n<u data-click=\"clear\">clear done</u> <u data-click=\"all\">show all</u> <u data-click=\"active\">show active</u> <u data-click=\"complete\">show completed</u> ";
+    AppView.prototype.html = "<input data-enter=\"submit\" data-bind=\"todo\">\n<ul data-outlet=\"todos\"></ul>\n<b>Remaining:<span data-bind=\"remaining\"></span></b> Double-click to edit. \n<u data-click=\"clear\">clear done</u> <u data-link=\"to /all\">show all</u> <u data-link=\"to /active\">show active</u> <u data-link=\"to /complete\">show completed</u> ";
 
     AppView.prototype.submit = function() {
       new Todo({
@@ -79,18 +79,6 @@
         }
       }
       return _results;
-    };
-
-    AppView.prototype.all = function() {
-      return todosView.model(Todo);
-    };
-
-    AppView.prototype.active = function() {
-      return todosView.model(Todo.mask("active"));
-    };
-
-    AppView.prototype.complete = function() {
-      return todosView.model(Todo.mask("complete"));
     };
 
     function AppView() {
@@ -123,6 +111,18 @@
     view: TodoView,
     parent: app,
     outlet: "todos"
+  });
+
+  emvy.Router.on("active", function() {
+    return todosView.model(Todo.mask("active"));
+  });
+
+  emvy.Router.on("complete", function() {
+    return todosView.model(Todo.mask("complete"));
+  });
+
+  emvy.Router.on("all", function() {
+    return todosView.model(Todo);
   });
 
   window.app = app;

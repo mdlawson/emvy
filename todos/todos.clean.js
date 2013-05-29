@@ -1,9 +1,16 @@
 emvy.Router();
 
-Todo = emvy.Model.extend();
-Todo.init();
+var Todo = emvy.Model.extend();
+Todo.init(function(){
+  this.mask("active",function(todo){
+    if (!todo.get("done")) return true;
+  });
+  this.mask("complete",function(todo){
+    if (todo.get("done")) return true;
+  });
+});
 
-TodoView = emvy.View.extend({
+var TodoView = emvy.View.extend({
   html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing"></b>',
   tag: 'li',
   constructor: function(){
@@ -17,8 +24,8 @@ TodoView = emvy.View.extend({
   }
 });
 
-AppView = emvy.View.extend({
-  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <a data-link="to /random">Random Link</a>',
+var AppView = emvy.View.extend({
+  html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <u data-link="to /all">show all</u> <u data-link="to /active">show active</u> <u data-link="to /complete">show completed</u>',
   submit: function(){
     new Todo({todo: this.get("todo")});
     this.set("todo","");
@@ -26,14 +33,14 @@ AppView = emvy.View.extend({
   clear: function(){
     var todos = Todo.all();
     for (var i = 0; i < todos.length; i++) {
-      if (todos[i].done) {
+      if (todos[i].get("done")) {
         Todo.remove(todos[i]);
       }
     }
   },
   constructor: function() {
     this.computed("remaining",function(){
-      var todos = Todo.all();
+      var todos = Todo.raw();
       var count = todos.length;
       for (var i = 0; i < todos.length; i++) {
         if (todos[i].done) count--;
@@ -43,10 +50,15 @@ AppView = emvy.View.extend({
   }
 });
 
-app = new AppView();
+var app = new AppView();
 app.insertInto("body");
 
-todosView = new emvy.ViewCollection({model:Todo,view:TodoView,parent:app,outlet:"todos"});
+var todosView = new emvy.ViewCollection({model:Todo,view:TodoView,parent:app,outlet:"todos"});
 
-window.app = app;
+emvy.Router.on("active", function(){ todosView.model(Todo.mask("active"));});
+emvy.Router.on("complete", function(){ todosView.model(Todo.mask("complete"));});
+emvy.Router.on("all", function(){ todosView.model(Todo);});
+
+
+window.app = app; // debugging stuff
 window.Todo = Todo;

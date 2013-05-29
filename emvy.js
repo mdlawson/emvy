@@ -811,7 +811,9 @@
           while (i < parts.length) {
             pre = parts.slice(0, i);
             post = parts.slice(i);
-            post.unshift(pre.join("."));
+            if (pre.length) {
+              post.unshift(pre.join("."));
+            }
             _this.trigger.apply(_this, post);
             i++;
           }
