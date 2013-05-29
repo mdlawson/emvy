@@ -102,7 +102,15 @@
         for el in outletElements
           name = el.getAttribute "data-outlet"
           outlets[name] = el
-          
+      
+      runAction = (action,e) =>
+        if action
+          parts = action.split(" ")
+          action = parts.shift()
+          parts.push e
+          if @[action] then @[action].apply(@,parts)
+
+
       for ev in ["click","dblclick","keypress","keydown","keyup","change"]
         element.addEventListener ev, (e) =>
           el = e.target
@@ -114,10 +122,8 @@
                 @trigger "change",name,el.value,el
                 @trigger "change:#{name}",el.value,el
             when "keydown"
-              action = el.getAttribute "data-enter"
-              if e.keyCode is 13 and action and @[action] then @[action](e)
-              action = el.getAttribute "data-keydown"
-              if @[action] then @[action](e)
+              if e.keyCode is 13 then runAction el.getAttribute("data-enter"),e
+              runAction el.getAttribute("data-keydown"),e
             when "click"
               if el.type is "checkbox"
                 name = el.getAttribute "data-bind"
@@ -129,11 +135,9 @@
                 if link
                   parts = link.split(" ")
                   emvy.Router.navigate[parts[0]](parts[1])
-                action = el.getAttribute "data-click"
-                if @[action] then @[action](e)
+                runAction el.getAttribute("data-click"),e
             else
-              action = el.getAttribute "data-#{type}"
-              if @[action] then @[action](e)
+              runAction el.getAttribute("data-#{type}"),e
           e.stopPropagation()
       rebuild()
       @set = (name,val) ->
@@ -214,8 +218,6 @@
   Stateful = (states) ->
     store = {initial:{}}
     return ->
-      for state,func of states
-        @addState(state,func)
       @transition = (state) ->
         if state = store[state]
           for key,val of state
@@ -232,7 +234,9 @@
           @trigger "state:#{@state}->#{state}"
           @state = state
       @addState = (name,func) ->
-        store[name] = func.call @
+        store[name] = func.call @,"state:#{name}"
+      for state,func of states
+        @addState(state,func)
 
 
   components = {
@@ -241,6 +245,7 @@
     Element: Element
     Attributed: Attributed
     Evented: Evented
+    Stateful: Stateful
   }
 
   load = (component,args...) ->

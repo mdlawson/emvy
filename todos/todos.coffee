@@ -5,13 +5,14 @@ Todo.init()
 
 
 class TodoView extends emvy.View
-  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="edit"></b>'
+  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing"></b>'
   tag: "li"
-  edit: ->
-    @original = @html()
-    @html '<span><input data-enter="commit" data-bind="todo"></span>'
-  commit: ->
-    @html(@original)
+  constructor: ->
+    super
+    @is "Stateful",
+      "editing": -> # using a state machine is a little over the top for this, but example aims to show off as much as possible.
+        "html": '<span><input data-enter="transition initial" data-bind="todo"></span>'
+
 
 class AppView extends emvy.View
   html: '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <a data-link="to /random">Random Link</a>'

@@ -173,7 +173,7 @@
       binds = {};
       outlets = {};
       return function() {
-        var ev, rebuild, _i, _len, _ref,
+        var ev, rebuild, runAction, _i, _len, _ref,
           _this = this;
 
         rebuild = function() {
@@ -197,11 +197,23 @@
           }
           return _results;
         };
+        runAction = function(action, e) {
+          var parts;
+
+          if (action) {
+            parts = action.split(" ");
+            action = parts.shift();
+            parts.push(e);
+            if (_this[action]) {
+              return _this[action].apply(_this, parts);
+            }
+          }
+        };
         _ref = ["click", "dblclick", "keypress", "keydown", "keyup", "change"];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ev = _ref[_i];
           element.addEventListener(ev, function(e) {
-            var action, el, link, name, parts, type;
+            var el, link, name, parts, type;
 
             el = e.target;
             type = e.type;
@@ -214,14 +226,10 @@
                 }
                 break;
               case "keydown":
-                action = el.getAttribute("data-enter");
-                if (e.keyCode === 13 && action && _this[action]) {
-                  _this[action](e);
+                if (e.keyCode === 13) {
+                  runAction(el.getAttribute("data-enter"), e);
                 }
-                action = el.getAttribute("data-keydown");
-                if (_this[action]) {
-                  _this[action](e);
-                }
+                runAction(el.getAttribute("data-keydown"), e);
                 break;
               case "click":
                 if (el.type === "checkbox") {
@@ -236,17 +244,11 @@
                     parts = link.split(" ");
                     emvy.Router.navigate[parts[0]](parts[1]);
                   }
-                  action = el.getAttribute("data-click");
-                  if (_this[action]) {
-                    _this[action](e);
-                  }
+                  runAction(el.getAttribute("data-click"), e);
                 }
                 break;
               default:
-                action = el.getAttribute("data-" + type);
-                if (_this[action]) {
-                  _this[action](e);
-                }
+                runAction(el.getAttribute("data-" + type), e);
             }
             return e.stopPropagation();
           });
@@ -398,12 +400,8 @@
         initial: {}
       };
       return function() {
-        var func, state;
+        var func, state, _results;
 
-        for (state in states) {
-          func = states[state];
-          this.addState(state, func);
-        }
         this.transition = function(state) {
           var key, val;
 
@@ -431,9 +429,15 @@
             return this.state = state;
           }
         };
-        return this.addState = function(name, func) {
-          return store[name] = func.call(this);
+        this.addState = function(name, func) {
+          return store[name] = func.call(this, "state:" + name);
         };
+        _results = [];
+        for (state in states) {
+          func = states[state];
+          _results.push(this.addState(state, func));
+        }
+        return _results;
       };
     };
     components = {
@@ -441,7 +445,8 @@
       Hiding: Hiding,
       Element: Element,
       Attributed: Attributed,
-      Evented: Evented
+      Evented: Evented,
+      Stateful: Stateful
     };
     load = function() {
       var args, component;
