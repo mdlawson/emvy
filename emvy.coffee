@@ -211,6 +211,29 @@
             str += "change:#{dep} "
         @on str, change
         change()
+  Stateful = (states) ->
+    store = {initial:{}}
+    return ->
+      for state,func of states
+        @addState(state,func)
+      @transition = (state) ->
+        if state = store[state]
+          for key,val of state
+            if @[key]
+              if typeof @[key] is "function" and typeof val isnt "function"
+                if not store.initial[key] then store.initial[key] = @[key]()
+                @[key](val)
+              else
+                if not store.intitial[key] then store.initial[key] = @[key]
+                @[key] = val
+            else
+              @[key] = val
+          @trigger "state:#{state}"
+          @trigger "state:#{@state}->#{state}"
+          @state = state
+      @addState = (name,func) ->
+        store[name] = func.call @
+
 
   components = {
     Computing: Computing
@@ -231,6 +254,20 @@
     @is: load 
     is: load
     mixin: (obj,ignore) -> @[key] = val for key, val of obj when key not in ignore
+    @extend: (childProps,childStatics) ->
+      constructor = if childProps and childProps.constructor then childProps.constructor
+      class Class extends @
+        constructor: ->
+          super
+          constructor and constructor.apply @,arguments
+      if childProps
+        for key,value of childProps when key isnt "constructor"
+          Class::[key] = value
+      if childStatics
+        for key,value of childStatics
+          Class[key] = value
+
+      return Class
 
   class Model extends EObject
     @type = "Model"

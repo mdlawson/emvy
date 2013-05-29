@@ -14,7 +14,7 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, Router, View, ViewCollection, ViewModel, components, load;
+    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, Router, Stateful, View, ViewCollection, ViewModel, components, load;
 
     Evented = function(tag) {
       var callbacks, downstream, upstream;
@@ -391,6 +391,51 @@
         };
       };
     };
+    Stateful = function(states) {
+      var store;
+
+      store = {
+        initial: {}
+      };
+      return function() {
+        var func, state;
+
+        for (state in states) {
+          func = states[state];
+          this.addState(state, func);
+        }
+        this.transition = function(state) {
+          var key, val;
+
+          if (state = store[state]) {
+            for (key in state) {
+              val = state[key];
+              if (this[key]) {
+                if (typeof this[key] === "function" && typeof val !== "function") {
+                  if (!store.initial[key]) {
+                    store.initial[key] = this[key]();
+                  }
+                  this[key](val);
+                } else {
+                  if (!store.intitial[key]) {
+                    store.initial[key] = this[key];
+                  }
+                  this[key] = val;
+                }
+              } else {
+                this[key] = val;
+              }
+            }
+            this.trigger("state:" + state);
+            this.trigger("state:" + this.state + "->" + state);
+            return this.state = state;
+          }
+        };
+        return this.addState = function(name, func) {
+          return store[name] = func.call(this);
+        };
+      };
+    };
     components = {
       Computing: Computing,
       Hiding: Hiding,
@@ -427,6 +472,38 @@
           }
         }
         return _results;
+      };
+
+      EObject.extend = function(childProps, childStatics) {
+        var Class, constructor, key, value;
+
+        constructor = childProps && childProps.constructor ? childProps.constructor : void 0;
+        Class = (function(_super) {
+          __extends(Class, _super);
+
+          function Class() {
+            Class.__super__.constructor.apply(this, arguments);
+            constructor && constructor.apply(this, arguments);
+          }
+
+          return Class;
+
+        })(this);
+        if (childProps) {
+          for (key in childProps) {
+            value = childProps[key];
+            if (key !== "constructor") {
+              Class.prototype[key] = value;
+            }
+          }
+        }
+        if (childStatics) {
+          for (key in childStatics) {
+            value = childStatics[key];
+            Class[key] = value;
+          }
+        }
+        return Class;
       };
 
       return EObject;
