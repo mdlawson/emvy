@@ -11,6 +11,7 @@
     callbacks = {}
     upstream = []
     downstream = []
+    all = []
     return ->
       that = @
       @attach = (something,up,oneway) ->
@@ -30,6 +31,9 @@
           index = upstream.indexOf something
           upstream.splice index,1
       @on = (action, callback) ->
+        if not callback and typeof action is "function"
+          all.push callback
+          return @
         actions = action.split " "
         for action in actions
           callbacks[action] or= []
@@ -44,6 +48,10 @@
         actions = action.split " "
         for action in actions
           resolved = false
+          if all.length 
+            allArgs = [action].concat(args)
+            for callback in all
+              if callback.apply(that,allArgs) is true then resolved = true 
           if callbacks[action] then for callback in callbacks[action]
             if callback.apply(that, args) is true then resolved = true
           unless resolved or not (upstream.length or downstream.length)
@@ -238,7 +246,6 @@
       for state,func of states
         @addState(state,func)
 
-
   components = {
     Computing: Computing
     Hiding: Hiding
@@ -279,7 +286,7 @@
     constructor: (data={}) ->
       @is Evented "model"
       @is Computing()
-      @is Attributed(@constructor.add(data))
+      @is Attributed(@constructor.add(data,@))
       @on "change:view", (key,val) =>
         @set key,val
         return true
@@ -290,24 +297,54 @@
       @attach @constructor,true
       @constructor.trigger "add",@
       @constructor.trigger "change"
-    @init: ->
+    @init: (func) ->
       @is Evented "Model"
       models = []
-      @add = (data) ->
-        model = models[models.length] = {id:models.length}
-        model[key] = val for key,val of data
-        return model
-      @remove = (model) ->
-        @trigger "remove",model
-        models.splice models.indexOf(model),1
+      raws = []
+      masks = {}
+      @add = (data,model) ->
+        temp = raws[raws.length] = {id:raws.length}
+        models.push model
+        temp[key] = val for key,val of data
+        return temp
+      @remove = (model,raw) ->
+        if raw
+          index = raws.indexOf(model)
+          @trigger "remove",models[index]
+        else
+          index = models.indexOf(model)
+          @trigger "remove",model
+        models.splice index,1
+        raws.splice index,1
         @trigger "change"
       @reset = (data) ->
         models = []
+        raws = []
+        @trigger "reset"
         new @(item) for item in data
-        @trigger "reset",models
         @trigger "change"
       @all = -> return models.slice 0
+      @raw = -> return raws.slice 0
+      @mask = (name,func) ->
+        if masks[name] and not func
+          return masks[name]
+        else
+          return masks[name] = new ModelMask @,func
+      func.call @
       return @
+
+  class ModelMask extends EObject
+    constructor: (Model,func) ->
+      @is Evented()
+      Model.attach @,false,true
+      @on "Model.remove Model.add", (model) ->
+        return if func(model) then false else true
+      @all = ->
+        return (item for item in Model.all() when func(item))
+      @raw = ->
+        return (item for item in Model.raw() when func(item))
+      @remove = -> Model.remove.apply(Model,arguments)
+      @reset = -> Model.reset.apply(Model,arguments) 
 
   class View extends EObject
     constructor: (options={}) ->
@@ -333,31 +370,27 @@
   
   class ViewCollection extends EObject
     constructor: (options={}) ->
+      @is Evented()
       @mixin options, ["model"]
       viewmodels = {}
-      add = (model) =>
+      @on "add:Model",(model) =>
         view = new (@view or options.view)
         viewmodels[model.get("id")] = new ViewModel({model:model,view:view})
         if @parent then view.insertInto(@parent,@outlet)
-      remove = (model) =>
-        id = model.id
+      @on "remove:Model",(model) =>
+        id = model.get("id")
         viewmodel = viewmodels[id]
         viewmodel.view().remove()
         delete viewmodels[id]
-      reset = (data) =>
+      @on "reset:Model", =>
         viewmodels = []
         @parent.clean @outlet
-        if data
-          add(model) for model in data
-      @is Hiding "model", options.model,(old,model) ->
-        if old 
-          old.off "add",add
-          old.off "remove",remove
-          old.off "reset",reset
-        model.on "add",add
-        model.on "remove",remove
-        model.on "reset",reset
-        return model
+      @is Hiding "model", options.model,(old,val) ->
+        old and old.detach @,false,true
+        val.attach @,false,true
+        @trigger "reset:Model"
+        @trigger("add:Model",model) for model in val.all()
+        return val
   
   Router = (options={}) ->
     (->
@@ -416,8 +449,6 @@
 
 
 ###
-
 TODO:
-- Stated component, implements Finite State Machine
 - Router, Top level, singleton FSM, triggers events.
 ###

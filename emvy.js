@@ -14,14 +14,15 @@
       return root.emvy = factory();
     }
   })(this, function() {
-    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, Router, Stateful, View, ViewCollection, ViewModel, components, load;
+    var Attributed, Computing, EObject, Element, Evented, Hiding, Model, ModelMask, Router, Stateful, View, ViewCollection, ViewModel, components, load;
 
     Evented = function(tag) {
-      var callbacks, downstream, upstream;
+      var all, callbacks, downstream, upstream;
 
       callbacks = {};
       upstream = [];
       downstream = [];
+      all = [];
       return function() {
         var that;
 
@@ -53,6 +54,10 @@
         this.on = function(action, callback) {
           var actions, _i, _len;
 
+          if (!callback && typeof action === "function") {
+            all.push(callback);
+            return this;
+          }
           actions = action.split(" ");
           for (_i = 0, _len = actions.length; _i < _len; _i++) {
             action = actions[_i];
@@ -70,17 +75,26 @@
           });
         };
         this.trigger = function() {
-          var action, actions, args, callback, item, parts, path, resolved, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2;
+          var action, actions, allArgs, args, callback, item, parts, path, resolved, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2;
 
           action = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
           actions = action.split(" ");
           for (_i = 0, _len = actions.length; _i < _len; _i++) {
             action = actions[_i];
             resolved = false;
+            if (all.length) {
+              allArgs = [action].concat(args);
+              for (_j = 0, _len1 = all.length; _j < _len1; _j++) {
+                callback = all[_j];
+                if (callback.apply(that, allArgs) === true) {
+                  resolved = true;
+                }
+              }
+            }
             if (callbacks[action]) {
               _ref = callbacks[action];
-              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                callback = _ref[_j];
+              for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
+                callback = _ref[_k];
                 if (callback.apply(that, args) === true) {
                   resolved = true;
                 }
@@ -99,16 +113,16 @@
                 }
                 action = parts.join(":");
               }
-              for (_k = 0, _len2 = downstream.length; _k < _len2; _k++) {
-                item = downstream[_k];
+              for (_l = 0, _len3 = downstream.length; _l < _len3; _l++) {
+                item = downstream[_l];
                 if (item !== this) {
                   if ((_ref1 = item.trigger).call.apply(_ref1, [that, action].concat(__slice.call(args))) === true) {
                     return true;
                   }
                 }
               }
-              for (_l = 0, _len3 = upstream.length; _l < _len3; _l++) {
-                item = upstream[_l];
+              for (_m = 0, _len4 = upstream.length; _m < _len4; _m++) {
+                item = upstream[_m];
                 if (item !== this) {
                   if ((_ref2 = item.trigger).call.apply(_ref2, [that, action].concat(__slice.call(args))) === true) {
                     return true;
@@ -527,7 +541,7 @@
         }
         this.is(Evented("model"));
         this.is(Computing());
-        this.is(Attributed(this.constructor.add(data)));
+        this.is(Attributed(this.constructor.add(data, this)));
         this.on("change:view", function(key, val) {
           _this.set(key, val);
           return true;
@@ -547,46 +561,128 @@
         this.constructor.trigger("change");
       }
 
-      Model.init = function() {
-        var models;
+      Model.init = function(func) {
+        var masks, models, raws;
 
         this.is(Evented("Model"));
         models = [];
-        this.add = function(data) {
-          var key, model, val;
+        raws = [];
+        masks = {};
+        this.add = function(data, model) {
+          var key, temp, val;
 
-          model = models[models.length] = {
-            id: models.length
+          temp = raws[raws.length] = {
+            id: raws.length
           };
+          models.push(model);
           for (key in data) {
             val = data[key];
-            model[key] = val;
+            temp[key] = val;
           }
-          return model;
+          return temp;
         };
-        this.remove = function(model) {
-          this.trigger("remove", model);
-          models.splice(models.indexOf(model), 1);
+        this.remove = function(model, raw) {
+          var index;
+
+          if (raw) {
+            index = raws.indexOf(model);
+            this.trigger("remove", models[index]);
+          } else {
+            index = models.indexOf(model);
+            this.trigger("remove", model);
+          }
+          models.splice(index, 1);
+          raws.splice(index, 1);
           return this.trigger("change");
         };
         this.reset = function(data) {
           var item, _i, _len;
 
           models = [];
+          raws = [];
+          this.trigger("reset");
           for (_i = 0, _len = data.length; _i < _len; _i++) {
             item = data[_i];
             new this(item);
           }
-          this.trigger("reset", models);
           return this.trigger("change");
         };
         this.all = function() {
           return models.slice(0);
         };
+        this.raw = function() {
+          return raws.slice(0);
+        };
+        this.mask = function(name, func) {
+          if (masks[name] && !func) {
+            return masks[name];
+          } else {
+            return masks[name] = new ModelMask(this, func);
+          }
+        };
+        func.call(this);
         return this;
       };
 
       return Model;
+
+    })(EObject);
+    ModelMask = (function(_super) {
+      __extends(ModelMask, _super);
+
+      function ModelMask(Model, func) {
+        this.is(Evented());
+        Model.attach(this, false, true);
+        this.on("Model.remove Model.add", function(model) {
+          if (func(model)) {
+            return false;
+          } else {
+            return true;
+          }
+        });
+        this.all = function() {
+          var item;
+
+          return (function() {
+            var _i, _len, _ref, _results;
+
+            _ref = Model.all();
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              item = _ref[_i];
+              if (func(item)) {
+                _results.push(item);
+              }
+            }
+            return _results;
+          })();
+        };
+        this.raw = function() {
+          var item;
+
+          return (function() {
+            var _i, _len, _ref, _results;
+
+            _ref = Model.raw();
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              item = _ref[_i];
+              if (func(item)) {
+                _results.push(item);
+              }
+            }
+            return _results;
+          })();
+        };
+        this.remove = function() {
+          return Model.remove.apply(Model, arguments);
+        };
+        this.reset = function() {
+          return Model.reset.apply(Model, arguments);
+        };
+      }
+
+      return ModelMask;
 
     })(EObject);
     View = (function(_super) {
@@ -639,15 +735,16 @@
       __extends(ViewCollection, _super);
 
       function ViewCollection(options) {
-        var add, remove, reset, viewmodels,
+        var viewmodels,
           _this = this;
 
         if (options == null) {
           options = {};
         }
+        this.is(Evented());
         this.mixin(options, ["model"]);
         viewmodels = {};
-        add = function(model) {
+        this.on("add:Model", function(model) {
           var view;
 
           view = new (_this.view || options.view);
@@ -658,39 +755,31 @@
           if (_this.parent) {
             return view.insertInto(_this.parent, _this.outlet);
           }
-        };
-        remove = function(model) {
+        });
+        this.on("remove:Model", function(model) {
           var id, viewmodel;
 
-          id = model.id;
+          id = model.get("id");
           viewmodel = viewmodels[id];
           viewmodel.view().remove();
           return delete viewmodels[id];
-        };
-        reset = function(data) {
-          var model, _i, _len, _results;
-
+        });
+        this.on("reset:Model", function() {
           viewmodels = [];
-          _this.parent.clean(_this.outlet);
-          if (data) {
-            _results = [];
-            for (_i = 0, _len = data.length; _i < _len; _i++) {
-              model = data[_i];
-              _results.push(add(model));
-            }
-            return _results;
+          return _this.parent.clean(_this.outlet);
+        });
+        this.is(Hiding("model", options.model, function(old, val) {
+          var model, _i, _len, _ref;
+
+          old && old.detach(this, false, true);
+          val.attach(this, false, true);
+          this.trigger("reset:Model");
+          _ref = val.all();
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            model = _ref[_i];
+            this.trigger("add:Model", model);
           }
-        };
-        this.is(Hiding("model", options.model, function(old, model) {
-          if (old) {
-            old.off("add", add);
-            old.off("remove", remove);
-            old.off("reset", reset);
-          }
-          model.on("add", add);
-          model.on("remove", remove);
-          model.on("reset", reset);
-          return model;
+          return val;
         }));
       }
 
@@ -770,9 +859,7 @@
   });
 
   /*
-  
   TODO:
-  - Stated component, implements Finite State Machine
   - Router, Top level, singleton FSM, triggers events.
   */
 

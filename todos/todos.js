@@ -18,7 +18,18 @@
 
   })(emvy.Model);
 
-  Todo.init();
+  Todo.init(function() {
+    this.mask("active", function(todo) {
+      if (!todo.get("done")) {
+        return true;
+      }
+    });
+    return this.mask("complete", function(todo) {
+      if (todo.get("done")) {
+        return true;
+      }
+    });
+  });
 
   TodoView = (function(_super) {
     __extends(TodoView, _super);
@@ -45,7 +56,7 @@
   AppView = (function(_super) {
     __extends(AppView, _super);
 
-    AppView.prototype.html = '<input data-enter="submit" data-bind="todo"><ul data-outlet="todos"></ul><b>Remaining:<span data-bind="remaining"></span></b> Double-click to edit. <u data-click="clear">clear done</u> <a data-link="to /random">Random Link</a>';
+    AppView.prototype.html = "<input data-enter=\"submit\" data-bind=\"todo\">\n<ul data-outlet=\"todos\"></ul>\n<b>Remaining:<span data-bind=\"remaining\"></span></b> Double-click to edit. \n<u data-click=\"clear\">clear done</u> <u data-click=\"all\">show all</u> <u data-click=\"active\">show active</u> <u data-click=\"complete\">show completed</u> ";
 
     AppView.prototype.submit = function() {
       new Todo({
@@ -61,7 +72,7 @@
       _results = [];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         todo = _ref1[_i];
-        if (todo.done) {
+        if (todo.get("done")) {
           _results.push(Todo.remove(todo));
         } else {
           _results.push(void 0);
@@ -70,12 +81,24 @@
       return _results;
     };
 
+    AppView.prototype.all = function() {
+      return todosView.model(Todo);
+    };
+
+    AppView.prototype.active = function() {
+      return todosView.model(Todo.mask("active"));
+    };
+
+    AppView.prototype.complete = function() {
+      return todosView.model(Todo.mask("complete"));
+    };
+
     function AppView() {
       AppView.__super__.constructor.apply(this, arguments);
       this.computed("remaining", function() {
         var count, todo, todos, _i, _len;
 
-        todos = Todo.all();
+        todos = Todo.raw();
         count = todos.length;
         for (_i = 0, _len = todos.length; _i < _len; _i++) {
           todo = todos[_i];
@@ -103,6 +126,8 @@
   });
 
   window.app = app;
+
+  window.todosView = todosView;
 
   window.Todo = Todo;
 
