@@ -1,7 +1,7 @@
 emvy
 ====
 
-A tiny MVVM framework built with coffeescript.
+A tiny MVVM framework built with CoffeeScript.
 
 Emvy's main goals:
 
@@ -22,6 +22,7 @@ Emvy's current features:
 * ViewCollection - ViewCollections manage a series of bound Views, creating and destroying them as needed in response to changes in the Model.
 
 Check out `todos/todos.coffee` for a preview of emvy's api, (and a working example) as it develops.
+A hosted (unstyled, warning, uglyness alert!) example can be seen [here](http://mdlawson.github.io/emvy/todos/)
 
 While emvy is currently being developed in coffeescript, emvy will not be a coffeescript only or even focused library, and when things are more stable a pure js rewrite is planned. 
 
