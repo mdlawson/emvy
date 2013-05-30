@@ -90,9 +90,10 @@
       @get = (key) -> attributes[key]
       @all = -> attributes
       @set = (key,value) ->
-        attributes[key] = value
-        @trigger "change:#{key}",value,model
-        @trigger "change",key,value,model
+        if (@validate and @validate(key,value)) or not @validate
+          attributes[key] = value
+          @trigger "change:#{key}",value,model
+          @trigger "change",key,value,model
   
   Element = (tag,html) ->
     element = document.createElement(tag or "div")
