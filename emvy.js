@@ -173,9 +173,11 @@
           return attributes;
         };
         return this.set = function(key, value) {
-          attributes[key] = value;
-          this.trigger("change:" + key, value, model);
-          return this.trigger("change", key, value, model);
+          if ((this.validate && this.validate(key, value)) || !this.validate) {
+            attributes[key] = value;
+            this.trigger("change:" + key, value, attributes);
+            return this.trigger("change", key, value, attributes);
+          }
         };
       };
     };
@@ -533,7 +535,7 @@
 
       Model.type = "Model";
 
-      function Model(data) {
+      function Model(data, rebuilding) {
         var _this = this;
 
         if (data == null) {
@@ -541,7 +543,7 @@
         }
         this.is(Evented("model"));
         this.is(Computing());
-        this.is(Attributed(this.constructor.add(data, this)));
+        this.is(Attributed(this.constructor.add(data, this, rebuilding)));
         this.on("change:view", function(key, val) {
           _this.set(key, val);
           return true;
@@ -576,7 +578,6 @@
           merge = [];
           for (key in queues) {
             queue = queues[key];
-            console.log(queue);
             update1 = null;
             if (queue[0].action !== "create") {
               for (i = _i = 0, _len = queue.length; _i < _len; i = ++_i) {
@@ -586,7 +587,7 @@
                     queue.unshift(queue.splice(i, 1)[0]);
                   } else {
                     queue[0].model = item.model;
-                    queue.splice(i, 0);
+                    queue.splice(i, 1);
                   }
                 }
               }
@@ -594,7 +595,7 @@
             for (i = _j = 0, _len1 = queue.length; _j < _len1; i = ++_j) {
               item = queue[i];
               item.key = key;
-              if (item.action === "delete") {
+              if (item.action === "destroy") {
                 queue = [item];
                 break;
               }
@@ -607,7 +608,7 @@
                     val = _ref[key];
                     update1[key] = val;
                   }
-                  queue.splice(i, 0);
+                  queue.splice(i, 1);
                 }
               }
             }
@@ -640,13 +641,13 @@
           var _this = this;
 
           return store.read(function(results) {
-            _this.reset(results);
+            _this.reset(results, true);
             if (cb) {
               return cb(results);
             }
           });
         };
-        this.on("model.change", function(key, value, model) {
+        this.on("change:model", function(key, value, model) {
           var delta, _name, _ref;
 
           delta = {};
@@ -659,24 +660,26 @@
             model: delta
           });
         });
-        this.add = function(data, model) {
+        this.add = function(data, model, rebuilding) {
           var key, temp, val, _name, _ref;
 
           temp = raws[raws.length] = {
-            id: raws.length
+            id: raws.length + 1
           };
           models.push(model);
           for (key in data) {
             val = data[key];
             temp[key] = val;
           }
-          if ((_ref = queues[_name = temp.id]) == null) {
-            queues[_name] = [];
+          if (!rebuilding) {
+            if ((_ref = queues[_name = temp.id]) == null) {
+              queues[_name] = [];
+            }
+            queues[temp.id].push({
+              action: "create",
+              model: temp
+            });
           }
-          queues[temp.id].push({
-            action: "create",
-            model: temp
-          });
           return temp;
         };
         this.remove = function(model, raw) {
@@ -693,14 +696,14 @@
             queues[_name] = [];
           }
           queues[id].push({
-            action: "delete",
+            action: "destroy",
             model: raws[index]
           });
           models.splice(index, 1);
           raws.splice(index, 1);
           return this.trigger("change");
         };
-        this.reset = function(data) {
+        this.reset = function(data, rebuilding) {
           var item, _i, _len;
 
           models = [];
@@ -708,7 +711,7 @@
           this.trigger("reset");
           for (_i = 0, _len = data.length; _i < _len; _i++) {
             item = data[_i];
-            new this(item);
+            new this(item, rebuilding);
           }
           return this.trigger("change");
         };

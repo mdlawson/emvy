@@ -92,8 +92,8 @@
       @set = (key,value) ->
         if (@validate and @validate(key,value)) or not @validate
           attributes[key] = value
-          @trigger "change:#{key}",value,model
-          @trigger "change",key,value,model
+          @trigger "change:#{key}",value,attributes
+          @trigger "change",key,value,attributes
   
   Element = (tag,html) ->
     element = document.createElement(tag or "div")
@@ -284,10 +284,10 @@
 
   class Model extends EObject
     @type = "Model"
-    constructor: (data={}) ->
+    constructor: (data={},rebuilding) ->
       @is Evented "model"
       @is Computing()
-      @is Attributed(@constructor.add(data,@))
+      @is Attributed(@constructor.add(data,@,rebuilding))
       @on "change:view", (key,val) =>
         @set key,val
         return true
@@ -308,24 +308,23 @@
       @persist = (cb) ->
         merge = []
         for key,queue of queues
-          console.log queue
           update1 = null
           if queue[0].action isnt "create"
             for item,i in queue when item.action is "create"
               if queue[0].action isnt "create" then queue.unshift(queue.splice(i,1)[0]) # creates to the front
               else 
                 queue[0].model = item.model
-                queue.splice(i,0) # overwrite first create then remove
+                queue.splice(i,1) # overwrite first create then remove
           for item,i in queue
             item.key = key
-            if item.action is "delete"
+            if item.action is "destroy"
               queue = [item]
               break 
             if item.action is "update" or item.action is "create"
               if update1 is null then update1 = item.model
               else
                 update1[key] = val for key,val of item.model # latter updates overwrite earlier ones
-                queue.splice(i,0)
+                queue.splice(i,1)
           merge = merge.concat queue
         queues = {}
         remaining = merge.length
@@ -343,10 +342,10 @@
 
       @fetch = (cb) ->
         store.read (results) =>
-          @reset results
+          @reset results,true
           if cb then cb results
 
-      @on "model.change", (key,value,model) ->
+      @on "change:model", (key,value,model) ->
         delta = {}
         delta[key] = value
         queues[model.id] ?= []
@@ -354,14 +353,15 @@
           action: "update"
           model: delta
 
-      @add = (data,model) ->
-        temp = raws[raws.length] = {id:raws.length}
+      @add = (data,model,rebuilding) ->
+        temp = raws[raws.length] = {id:raws.length+1}
         models.push model
         temp[key] = val for key,val of data
-        queues[temp.id] ?= []
-        queues[temp.id].push
-          action: "create"
-          model: temp
+        unless rebuilding
+          queues[temp.id] ?= []
+          queues[temp.id].push
+            action: "create"
+            model: temp
         return temp
       @remove = (model,raw) ->
         if raw
@@ -372,16 +372,16 @@
         @trigger "remove",model
         queues[id = raws[index].id] ?= []
         queues[id].push
-          action: "delete"
+          action: "destroy"
           model: raws[index]
         models.splice index,1
         raws.splice index,1
         @trigger "change"
-      @reset = (data) ->
+      @reset = (data,rebuilding) ->
         models = []
         raws = []
         @trigger "reset"
-        new @(item) for item in data
+        new @(item,rebuilding) for item in data
         @trigger "change"
       @all = -> return models.slice 0
       @raw = -> return raws.slice 0

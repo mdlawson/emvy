@@ -2,6 +2,8 @@ emvy.Router()
 
 class Todo extends emvy.Model
 Todo.init ->
+  @store emvy.localStore "todos"
+  @on "change:model", => @persist()
   @mask "active", (todo) ->
     if not todo.get("done") then return true
   @mask "complete", (todo) ->
@@ -26,10 +28,12 @@ class AppView extends emvy.View
         """
   submit: ->
     new Todo(todo: @get "todo")
+    Todo.persist()
     @set "todo",""
   clear: ->
     for todo in Todo.all()
       if todo.get("done") then Todo.remove todo
+    Todo.persist()
   constructor: ->
     super
     @computed "remaining",->

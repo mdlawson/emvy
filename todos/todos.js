@@ -19,6 +19,12 @@
   })(emvy.Model);
 
   Todo.init(function() {
+    var _this = this;
+
+    this.store(emvy.localStore("todos"));
+    this.on("change:model", function() {
+      return _this.persist();
+    });
     this.mask("active", function(todo) {
       if (!todo.get("done")) {
         return true;
@@ -62,23 +68,21 @@
       new Todo({
         todo: this.get("todo")
       });
+      Todo.persist();
       return this.set("todo", "");
     };
 
     AppView.prototype.clear = function() {
-      var todo, _i, _len, _ref1, _results;
+      var todo, _i, _len, _ref1;
 
       _ref1 = Todo.all();
-      _results = [];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         todo = _ref1[_i];
         if (todo.get("done")) {
-          _results.push(Todo.remove(todo));
-        } else {
-          _results.push(void 0);
+          Todo.remove(todo);
         }
       }
-      return _results;
+      return Todo.persist();
     };
 
     function AppView() {
