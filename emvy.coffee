@@ -91,8 +91,8 @@
       @all = -> attributes
       @set = (key,value) ->
         attributes[key] = value
-        @trigger "change:#{key}",value
-        @trigger "change",key,value
+        @trigger "change:#{key}",value,model
+        @trigger "change",key,value,model
   
   Element = (tag,html) ->
     element = document.createElement(tag or "div")
@@ -302,18 +302,77 @@
       models = []
       raws = []
       masks = {}
+      queues = {}
+      store = undefined
+      @persist = (cb) ->
+        merge = []
+        for key,queue of queues
+          console.log queue
+          update1 = null
+          if queue[0].action isnt "create"
+            for item,i in queue when item.action is "create"
+              if queue[0].action isnt "create" then queue.unshift(queue.splice(i,1)[0]) # creates to the front
+              else 
+                queue[0].model = item.model
+                queue.splice(i,0) # overwrite first create then remove
+          for item,i in queue
+            item.key = key
+            if item.action is "delete"
+              queue = [item]
+              break 
+            if item.action is "update" or item.action is "create"
+              if update1 is null then update1 = item.model
+              else
+                update1[key] = val for key,val of item.model # latter updates overwrite earlier ones
+                queue.splice(i,0)
+          merge = merge.concat queue
+        queues = {}
+        remaining = merge.length
+        for item in merge
+          store[item.action](item.key,item.model,(err) ->
+            if err and cb then cb err
+            remaining--
+            if remaining is 0 and cb then cb()
+          )
+        return merge
+      @store = (newStore) ->
+        if newStore then store = newStore
+        @fetch()
+        return store
+
+      @fetch = (cb) ->
+        store.read (results) =>
+          @reset results
+          if cb then cb results
+
+      @on "model.change", (key,value,model) ->
+        delta = {}
+        delta[key] = value
+        queues[model.id] ?= []
+        queues[model.id].push 
+          action: "update"
+          model: delta
+
       @add = (data,model) ->
         temp = raws[raws.length] = {id:raws.length}
         models.push model
         temp[key] = val for key,val of data
+        queues[temp.id] ?= []
+        queues[temp.id].push
+          action: "create"
+          model: temp
         return temp
       @remove = (model,raw) ->
         if raw
           index = raws.indexOf(model)
-          @trigger "remove",models[index]
+          model = models[index]
         else
           index = models.indexOf(model)
-          @trigger "remove",model
+        @trigger "remove",model
+        queues[id = raws[index].id] ?= []
+        queues[id].push
+          action: "delete"
+          model: raws[index]
         models.splice index,1
         raws.splice index,1
         @trigger "change"

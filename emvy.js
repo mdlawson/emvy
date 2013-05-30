@@ -174,8 +174,8 @@
         };
         return this.set = function(key, value) {
           attributes[key] = value;
-          this.trigger("change:" + key, value);
-          return this.trigger("change", key, value);
+          this.trigger("change:" + key, value, model);
+          return this.trigger("change", key, value, model);
         };
       };
     };
@@ -562,14 +562,105 @@
       }
 
       Model.init = function(func) {
-        var masks, models, raws;
+        var masks, models, queues, raws, store;
 
         this.is(Evented("Model"));
         models = [];
         raws = [];
         masks = {};
+        queues = {};
+        store = void 0;
+        this.persist = function(cb) {
+          var i, item, key, merge, queue, remaining, update1, val, _i, _j, _k, _len, _len1, _len2, _ref;
+
+          merge = [];
+          for (key in queues) {
+            queue = queues[key];
+            console.log(queue);
+            update1 = null;
+            if (queue[0].action !== "create") {
+              for (i = _i = 0, _len = queue.length; _i < _len; i = ++_i) {
+                item = queue[i];
+                if (item.action === "create") {
+                  if (queue[0].action !== "create") {
+                    queue.unshift(queue.splice(i, 1)[0]);
+                  } else {
+                    queue[0].model = item.model;
+                    queue.splice(i, 0);
+                  }
+                }
+              }
+            }
+            for (i = _j = 0, _len1 = queue.length; _j < _len1; i = ++_j) {
+              item = queue[i];
+              item.key = key;
+              if (item.action === "delete") {
+                queue = [item];
+                break;
+              }
+              if (item.action === "update" || item.action === "create") {
+                if (update1 === null) {
+                  update1 = item.model;
+                } else {
+                  _ref = item.model;
+                  for (key in _ref) {
+                    val = _ref[key];
+                    update1[key] = val;
+                  }
+                  queue.splice(i, 0);
+                }
+              }
+            }
+            merge = merge.concat(queue);
+          }
+          queues = {};
+          remaining = merge.length;
+          for (_k = 0, _len2 = merge.length; _k < _len2; _k++) {
+            item = merge[_k];
+            store[item.action](item.key, item.model, function(err) {
+              if (err && cb) {
+                cb(err);
+              }
+              remaining--;
+              if (remaining === 0 && cb) {
+                return cb();
+              }
+            });
+          }
+          return merge;
+        };
+        this.store = function(newStore) {
+          if (newStore) {
+            store = newStore;
+          }
+          this.fetch();
+          return store;
+        };
+        this.fetch = function(cb) {
+          var _this = this;
+
+          return store.read(function(results) {
+            _this.reset(results);
+            if (cb) {
+              return cb(results);
+            }
+          });
+        };
+        this.on("model.change", function(key, value, model) {
+          var delta, _name, _ref;
+
+          delta = {};
+          delta[key] = value;
+          if ((_ref = queues[_name = model.id]) == null) {
+            queues[_name] = [];
+          }
+          return queues[model.id].push({
+            action: "update",
+            model: delta
+          });
+        });
         this.add = function(data, model) {
-          var key, temp, val;
+          var key, temp, val, _name, _ref;
 
           temp = raws[raws.length] = {
             id: raws.length
@@ -579,18 +670,32 @@
             val = data[key];
             temp[key] = val;
           }
+          if ((_ref = queues[_name = temp.id]) == null) {
+            queues[_name] = [];
+          }
+          queues[temp.id].push({
+            action: "create",
+            model: temp
+          });
           return temp;
         };
         this.remove = function(model, raw) {
-          var index;
+          var id, index, _name, _ref;
 
           if (raw) {
             index = raws.indexOf(model);
-            this.trigger("remove", models[index]);
+            model = models[index];
           } else {
             index = models.indexOf(model);
-            this.trigger("remove", model);
           }
+          this.trigger("remove", model);
+          if ((_ref = queues[_name = id = raws[index].id]) == null) {
+            queues[_name] = [];
+          }
+          queues[id].push({
+            action: "delete",
+            model: raws[index]
+          });
           models.splice(index, 1);
           raws.splice(index, 1);
           return this.trigger("change");
