@@ -594,7 +594,7 @@
             }
             for (i = _j = 0, _len1 = queue.length; _j < _len1; i = ++_j) {
               item = queue[i];
-              item.key = key;
+              item.key = parseInt(key, 10);
               if (item.action === "destroy") {
                 queue = [item];
                 break;
@@ -970,7 +970,7 @@
 
   /*
   TODO:
-  - Router, Top level, singleton FSM, triggers events.
+  - Better Router
   */
 
 
