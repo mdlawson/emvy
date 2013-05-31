@@ -1,0 +1,70 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+}
+#container {
+  padding-left: 200px;
+  left: 0;
+}
+#menu {
+  margin-left: -200px;
+  width: 200px;
+  position: fixed;
+  top: 0;
+  left: 200px;
+  bottom: 0;
+  z-index: 1000;
+  background: #393939;
+  overflow-y: auto;
+  -webkit-overflow-scroll: touch;
+}
+#menu .pure-menu {
+  background: transparent;
+  border: none;
+}
+#menu a {
+  border: none;
+}
+#menu a:hover {
+  background: #4c4c4c;
+}
+#menu .pure-menu-heading {
+  color: #808080;
+  border-color: #404040;
+}
+#menu .title {
+  color: #bd3bce;
+  font-size: 120%;
+  text-transform: none;
+  text-align: center;
+}
+#main {
+  width: 100%;
+  color: #4c4c4c;
+}
+#main .pure-g-r {
+  padding: 3em;
+}
+#main h1 {
+  color: #393939;
+}
+#main button.purple {
+  background: #832f8e;
+  color: #fff;
+}
+.hero {
+  text-align: center;
+  margin: 8em 0 3em;
+}
+.hero h1,
+.hero h2 {
+  font-weight: 300;
+}
+.hero h1 {
+  font-size: 800%;
+  margin: 0;
+  padding: 0;
+  color: #832f8e !important;
+}
+.hero h2 {
+  font-size: 200%;
+}
