@@ -316,7 +316,7 @@
                 queue[0].model = item.model
                 queue.splice(i,1) # overwrite first create then remove
           for item,i in queue
-            item.key = key
+            item.key = parseInt key,10
             if item.action is "destroy"
               queue = [item]
               break 
