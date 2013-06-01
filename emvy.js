@@ -752,7 +752,7 @@
           return store.read(function(results) {
             _this.reset(results, true);
             if (cb) {
-              return cb(results);
+              return cb(_this.all());
             }
           });
         };
@@ -818,9 +818,11 @@
           models = [];
           raws = [];
           this.trigger("reset");
-          for (_i = 0, _len = data.length; _i < _len; _i++) {
-            item = data[_i];
-            new this(item, rebuilding);
+          if (data) {
+            for (_i = 0, _len = data.length; _i < _len; _i++) {
+              item = data[_i];
+              new this(item, rebuilding);
+            }
           }
           return this.trigger("change");
         };
@@ -830,6 +832,16 @@
         this.raw = function() {
           return raws.slice(0);
         };
+        this.find = function(id) {
+          var i, model, _i, _len;
+
+          for (i = _i = 0, _len = raws.length; _i < _len; i = ++_i) {
+            model = raws[i];
+            if (model.id === id) {
+              return models[i];
+            }
+          }
+        };
         this.mask = function(name, func) {
           if (masks[name] && !func) {
             return masks[name];
@@ -837,7 +849,9 @@
             return masks[name] = new ModelMask(this, func);
           }
         };
-        func.call(this);
+        if (func) {
+          func.call(this);
+        }
         return this;
       };
 

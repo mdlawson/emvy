@@ -408,7 +408,7 @@
       @fetch = (cb) ->
         store.read (results) =>
           @reset results,true
-          if cb then cb results
+          if cb then cb @all()
 
       @on "change:model", (key,value,model) ->
         delta = {}
@@ -446,16 +446,20 @@
         models = []
         raws = []
         @trigger "reset"
-        new @(item,rebuilding) for item in data
+        if data
+          new @(item,rebuilding) for item in data
         @trigger "change"
       @all = -> return models.slice 0
       @raw = -> return raws.slice 0
+      @find = (id) ->
+        for model,i in raws when model.id is id
+          return models[i]
       @mask = (name,func) ->
         if masks[name] and not func
           return masks[name]
         else
           return masks[name] = new ModelMask @,func
-      func.call @
+      if func then func.call @
       return @
 
   class ModelMask extends EObject
