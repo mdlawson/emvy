@@ -40,7 +40,7 @@
   TodoView = (function(_super) {
     __extends(TodoView, _super);
 
-    TodoView.prototype.html = '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing"></b>';
+    TodoView.prototype.html = '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing" data-class="done?strike"></b>';
 
     TodoView.prototype.tag = "li";
 

@@ -182,18 +182,20 @@
       };
     };
     Element = function(tag, html) {
-      var binds, element, outlets;
+      var attributes, binds, classes, element, outlets;
 
       element = document.createElement(tag || "div");
       element.innerHTML = html || "";
       binds = {};
+      attributes = {};
+      classes = {};
       outlets = {};
       return function() {
         var ev, rebuild, runAction, _i, _len, _ref,
           _this = this;
 
         rebuild = function() {
-          var bindElements, el, name, outletElements, _i, _j, _len, _len1, _ref, _results;
+          var attr, attrBinding, attrBinds, attributedElements, bind, bindElements, classBinding, classBinds, classyElements, conditions, el, func, name, outletElements, parts, ternery, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _name, _name1, _ref, _ref1, _ref2;
 
           bindElements = element.querySelectorAll("[data-bind]");
           for (_i = 0, _len = bindElements.length; _i < _len; _i++) {
@@ -205,13 +207,103 @@
             binds[name].push(el);
           }
           outletElements = element.querySelectorAll("[data-outlet]");
-          _results = [];
           for (_j = 0, _len1 = outletElements.length; _j < _len1; _j++) {
             el = outletElements[_j];
             name = el.getAttribute("data-outlet");
-            _results.push(outlets[name] = el);
+            outlets[name] = el;
           }
-          return _results;
+          attributedElements = element.querySelectorAll("[data-attr]");
+          for (_k = 0, _len2 = attributedElements.length; _k < _len2; _k++) {
+            el = attributedElements[_k];
+            attrBinding = el.getAttribute("data-attr");
+            attrBinds = attrBinding.split(" ");
+            for (_l = 0, _len3 = attrBinds.length; _l < _len3; _l++) {
+              bind = attrBinds[_l];
+              parts = bind.split("|");
+              attr = parts[0];
+              ternery = parts[1].split("?");
+              if (ternery.length === 1) {
+                func = (function(el, name) {
+                  return function(val) {
+                    if (typeof val !== "undefined") {
+                      return el.setAttribute(name, val);
+                    } else {
+                      return e.getAttribute(name);
+                    }
+                  };
+                })(el, attr);
+              } else {
+                conditions = ternery[1].split(":");
+                func = (function(el, name, opt1, opt2) {
+                  return function(val) {
+                    if (typeof val !== "undefined") {
+                      if (opt2) {
+                        return el.setAttribute(name, val ? opt1 : opt2);
+                      } else if (val) {
+                        return el.setAttribute(name, opt1);
+                      } else {
+                        return el.removeAttribute(name);
+                      }
+                    } else {
+                      return el.getAttribute(name);
+                    }
+                  };
+                })(el, attr, conditions[0], conditions[1]);
+              }
+              if ((_ref1 = attributes[_name = ternery[0]]) == null) {
+                attributes[_name] = [];
+              }
+              attributes[ternery[0]].push(func);
+            }
+          }
+          classyElements = element.querySelectorAll("[data-class]");
+          for (_m = 0, _len4 = classyElements.length; _m < _len4; _m++) {
+            el = classyElements[_m];
+            classBinding = el.getAttribute("data-class");
+            classBinds = classBinding.split(" ");
+            for (_n = 0, _len5 = classBinds.length; _n < _len5; _n++) {
+              bind = classBinds[_n];
+              ternery = bind.split("?");
+              if (ternery.length === 1) {
+                func = (function(el) {
+                  var currentVal;
+
+                  currentVal = void 0;
+                  return function(val) {
+                    if (currentVal) {
+                      el.className = el.className.replace(currentVal, "");
+                    }
+                    return el.className += currentVal = " " + val;
+                  };
+                })(el);
+              } else {
+                conditions = ternery[1].split(":");
+                func = (function(el, opt1, opt2) {
+                  return function(val) {
+                    if (opt2) {
+                      if (val) {
+                        el.className = el.className.replace(" " + opt2, "");
+                        return el.className += " " + opt1;
+                      } else {
+                        el.className = el.className.replace(" " + opt1, "");
+                        return el.className += " " + opt2;
+                      }
+                    } else {
+                      if (val) {
+                        return el.className += " " + opt1;
+                      } else {
+                        return el.className = el.className.replace(" " + opt1, "");
+                      }
+                    }
+                  };
+                })(el, conditions[0], conditions[1]);
+              }
+              if ((_ref2 = classes[_name1 = ternery[0]]) == null) {
+                classes[_name1] = [];
+              }
+              classes[ternery[0]].push(func);
+            }
+          }
         };
         runAction = function(action, e) {
           var parts;
@@ -271,29 +363,42 @@
         }
         rebuild();
         this.set = function(name, val) {
-          var el, els, _j, _len1, _results;
+          var attrs, cls, el, els, func, _j, _k, _l, _len1, _len2, _len3, _results;
 
           els = binds[name];
-          if (!(els && els.length)) {
-            return;
-          }
-          _results = [];
-          for (_j = 0, _len1 = els.length; _j < _len1; _j++) {
-            el = els[_j];
-            tag = el.tagName.toLowerCase();
-            if (tag === "input" || tag === "textarea" || tag === "select") {
-              if (el.type === "checkbox") {
-                el.checked = val;
+          if (els && els.length) {
+            for (_j = 0, _len1 = els.length; _j < _len1; _j++) {
+              el = els[_j];
+              tag = el.tagName.toLowerCase();
+              if (tag === "input" || tag === "textarea" || tag === "select") {
+                if (el.type === "checkbox") {
+                  el.checked = val;
+                }
+                el.value = val;
+              } else {
+                el.innerHTML = val;
               }
-              _results.push(el.value = val);
-            } else {
-              _results.push(el.innerHTML = val);
             }
           }
-          return _results;
+          attrs = attributes[name];
+          if (attrs && attrs.length) {
+            for (_k = 0, _len2 = attrs.length; _k < _len2; _k++) {
+              func = attrs[_k];
+              func(val);
+            }
+          }
+          cls = classes[name];
+          if (cls && cls.length) {
+            _results = [];
+            for (_l = 0, _len3 = cls.length; _l < _len3; _l++) {
+              func = cls[_l];
+              _results.push(func(val));
+            }
+            return _results;
+          }
         };
         this.get = function(name) {
-          var el, els;
+          var attrs, el, els;
 
           els = binds[name];
           if (!(els && (el = els[0]))) {
@@ -306,6 +411,10 @@
             }
             return el.value;
           } else {
+            attrs = attributes[name];
+            if (attrs && attrs.length) {
+              return arrs[0]();
+            }
             return el.innerHTML;
           }
         };

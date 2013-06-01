@@ -99,8 +99,11 @@
     element = document.createElement(tag or "div")
     element.innerHTML = html or ""
     binds = {}
+    attributes = {}
+    classes = {}
     outlets = {}
     return ->
+
       rebuild = =>
         bindElements = element.querySelectorAll "[data-bind]"
         for el in bindElements
@@ -111,7 +114,60 @@
         for el in outletElements
           name = el.getAttribute "data-outlet"
           outlets[name] = el
-      
+        attributedElements = element.querySelectorAll "[data-attr]"
+        for el in attributedElements
+          attrBinding = el.getAttribute "data-attr"
+          attrBinds = attrBinding.split " "
+          for bind in attrBinds
+            parts = bind.split "|"
+            attr = parts[0]
+            ternery = parts[1].split "?"
+            if ternery.length is 1
+              func = ((el,name) -> (val) -> 
+                if typeof val isnt "undefined" then el.setAttribute(name,val)
+                else return e.getAttribute(name)
+              )(el,attr)
+            else
+              conditions = ternery[1].split ":"
+              func = ((el,name,opt1,opt2) -> (val) -> 
+                if typeof val isnt "undefined"
+                  if opt2 then el.setAttribute(name,if val then opt1 else opt2)
+                  else if val then el.setAttribute(name,opt1) else el.removeAttribute(name)
+                else return el.getAttribute(name)
+              )(el,attr,conditions[0],conditions[1])
+            attributes[ternery[0]] ?= []
+            attributes[ternery[0]].push func
+        classyElements = element.querySelectorAll "[data-class]"
+        for el in classyElements
+          classBinding = el.getAttribute "data-class"
+          classBinds = classBinding.split " "
+          for bind in classBinds
+            ternery = bind.split "?"
+            if ternery.length is 1
+              func = ((el) -> 
+                currentVal = undefined
+                return (val) ->
+                  if currentVal
+                    el.className = el.className.replace currentVal, ""
+                  el.className += currentVal = " " + val
+              )(el)
+            else
+              conditions = ternery[1].split ":"
+              func = ((el,opt1,opt2) -> (val) ->
+                if opt2
+                  if val
+                    el.className = el.className.replace " " + opt2, ""
+                    el.className += " " + opt1
+                  else
+                    el.className = el.className.replace " " + opt1, ""
+                    el.className += " " + opt2
+                else
+                  if val then el.className += " " + opt1 else el.className = el.className.replace " " + opt1, ""
+              )(el,conditions[0],conditions[1])
+            classes[ternery[0]] ?= []
+            classes[ternery[0]].push func
+        return
+
       runAction = (action,e) =>
         if action
           parts = action.split(" ")
@@ -151,14 +207,21 @@
       rebuild()
       @set = (name,val) ->
         els = binds[name]
-        if not (els and els.length) then return
-        for el in els
-          tag = el.tagName.toLowerCase() 
-          if tag is "input" or tag is "textarea" or tag is "select"
-            if el.type is "checkbox" then el.checked = val
-            el.value = val
-          else 
-            el.innerHTML = val
+        if els and els.length
+          for el in els
+            tag = el.tagName.toLowerCase() 
+            if tag is "input" or tag is "textarea" or tag is "select"
+              if el.type is "checkbox" then el.checked = val
+              el.value = val
+            else 
+              el.innerHTML = val
+        attrs = attributes[name]
+        if attrs and attrs.length
+          func(val) for func in attrs
+        cls = classes[name]
+        if cls and cls.length
+          func(val) for func in cls
+              
       @get = (name) -> 
         els = binds[name]
         if not (els and el = els[0]) then return undefined
@@ -167,6 +230,8 @@
           if el.type is "checkbox" then return el.checked
           return el.value
         else
+          attrs = attributes[name]
+          if attrs and attrs.length then return arrs[0]()
           return el.innerHTML
       @html = (data) ->
         if not data then return element.innerHTML

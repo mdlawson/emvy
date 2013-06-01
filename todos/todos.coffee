@@ -10,12 +10,12 @@ Todo.init ->
     if todo.get("done") then return true
 
 class TodoView extends emvy.View
-  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing"></b>'
+  html: '<input type="checkbox" data-bind="done"><b data-bind="todo" data-dblclick="transition editing" data-class="done?strike"></b>'
   tag: "li"
   constructor: ->
     super
     @is "Stateful",
-      editing: -> # using a state machine is a little over the top for this, but example aims to show off as much as possible.
+      editing: ->
         html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
 
 
