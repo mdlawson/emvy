@@ -306,12 +306,12 @@ Every event emitter has an upstream, a downstream, and an optional tag. For ever
 <p>Creates a new computed value. <code>name</code> is the name of the value, when its changes are broadcast in events. <code>func</code> is the function called to compute the value, and <code>deps</code> is an array of properties whose changes this computed depends on. <code>deps</code> can also contain Models, in which case all changes on the model will cause recalculation of the computed. When a change in any of its dependencies occurs, <code>func</code> is called, and the value returned from func is emitted. </p>
 <hr>
 <span id="stateful"></span><h2>Stateful(states)</h2>
-<p>Stateful is emvys implementation of a Finite State Machine. States can be initially defined by an object <code>states</code> that maps keys of state names to functions that are called when the state is entered, and should return a object of properties that should be changed for that state. Setter/getter properties, such as those created by Hiding, are taken into account. Stateful objects emit events on state change, one event simply showing the new state <code>state:newstate</code> one showing the transition that occurred <code>state:initial-&gt;newstate</code> and one just showing the exit of the old state &quot;state:initial-&gt;&quot;</p>
+<p>Stateful is emvys implementation of a Finite State Machine. States can be initially defined by an object <code>states</code> that maps keys of state names to objects of properties that should be changed for that state. Setter/getter properties, such as those created by Hiding, are taken into account. Stateful objects emit events on state change, one event simply showing the new state <code>state:newstate</code> one showing the transition that occurred <code>state:initial-&gt;newstate</code> and one just showing the exit of the old state &quot;state:initial-&gt;&quot;</p>
 <p>The initial state of the object is stored in the special state initial.</p>
-<h3>object.transition(state)</h3>
-<p>Transition to state <code>state</code></p>
-<h3>object.addState(name,func)</h3>
-<p>Add the state described by <code>func</code> as <code>name</code></p>
+<h3>object.transition(name)</h3>
+<p>Transition to state <code>name</code></p>
+<h3>object.addState(name,state)</h3>
+<p>Add the state described by <code>state</code> as <code>name</code></p>
 <hr>
 
           </div>
