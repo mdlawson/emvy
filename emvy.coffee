@@ -172,7 +172,7 @@
         if action
           parts = action.split(" ")
           action = parts.shift()
-          parts.unshift e
+          parts.push e
           if @[action] then @[action].apply(@,parts)
 
 
@@ -263,7 +263,6 @@
     value = null
     return ->
       @[prop] = (newval) ->
-        #console.log value,newval
         unless newval 
           return if get then get.call(@,value) else value
         else 

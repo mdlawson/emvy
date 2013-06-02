@@ -311,7 +311,7 @@
           if (action) {
             parts = action.split(" ");
             action = parts.shift();
-            parts.unshift(e);
+            parts.push(e);
             if (_this[action]) {
               return _this[action].apply(_this, parts);
             }
