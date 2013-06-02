@@ -1,8 +1,128 @@
-<!DOCTYPE html><html><head><title>emvy</title><link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600"><link rel="stylesheet" href="./pure.css"><link rel="stylesheet" href="./app.css"></head><body><div id="container" class="pure-g-r"><div id="menu" class="pure-u"><div class="pure-menu pure-menu-open"><a href="#" class="pure-menu-heading title">emvy </a><ul><li> <a href="#intro">Introduction</a></li><li> <a href="#download">Download</a></li><li> <a href="#example">Example</a></li><li class="pure-menu-heading">Classes</li><li class="pure-menu-heading">Components</li></ul></div></div><div id="main" class="pure-u"><div class="hero"><h1 class="pure-u-1">emvy</h1><h2 class="pure-u-3-4">A tiny (<15kb minified) JavaScript MVVM framework that doesn't make a mess.</h2></div><div class="pure-g-r"><div class="pure-u-1"><h1 id="intro">Introduction</h1><p>emvy is a framework for creating web-apps that tries to strike a balance between flexibility and structure, aiming to speed up development while still being clear, avoiding &quot;magic&quot; and retaining control. Emvy&#39;s main goals are as follows:</p>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>emvy</title>
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600">
+    <link rel="stylesheet" href="./pure.css"><style type="text/css">body {
+  font-family: 'Open Sans', sans-serif;
+}
+a {
+  color: #832f8e;
+  text-decoration: none;
+}
+#container {
+  padding-left: 200px;
+  left: 0;
+}
+#menu {
+  margin-left: -200px;
+  width: 200px;
+  position: fixed;
+  top: 0;
+  left: 200px;
+  bottom: 0;
+  z-index: 1000;
+  background: #393939;
+  overflow-y: auto;
+  -webkit-overflow-scroll: touch;
+}
+#menu .pure-menu {
+  background: transparent;
+  border: none;
+}
+#menu a {
+  border: none;
+}
+#menu a:hover {
+  background: #4c4c4c;
+}
+#menu .pure-menu-heading {
+  color: #808080;
+  border-color: #404040;
+}
+#menu .title {
+  color: #bd3bce;
+  font-size: 120%;
+  text-transform: none;
+  text-align: center;
+}
+#main {
+  width: 100%;
+  color: #4c4c4c;
+}
+#main .pure-g-r {
+  padding: 3em;
+}
+#main h1 {
+  color: #393939;
+}
+#main button.purple {
+  background: #832f8e;
+  color: #fff;
+}
+.hero {
+  text-align: center;
+  margin: 8em 0 3em;
+}
+.hero h1,
+.hero h2 {
+  font-weight: 300;
+}
+.hero h1 {
+  font-size: 800%;
+  margin: 0;
+  padding: 0;
+  color: #832f8e !important;
+}
+.hero h2 {
+  font-size: 200%;
+}
+.docs hr {
+  border: 0;
+  height: 0;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  margin: 40px 0;
+}
+</style>
+  </head>
+  <body>
+    <div id="container" class="pure-g-r">
+      <div id="menu" class="pure-u">
+        <div class="pure-menu pure-menu-open"><a href="#" class="pure-menu-heading title">emvy </a>
+          <ul>
+            <li> <a href="#intro">Introduction</a></li>
+            <li> <a href="#download">Download</a></li>
+            <li> <a href="#example">Example</a></li>
+            <li class="pure-menu-heading">Classes</li>
+            <li><a href="#object">Object</a></li>
+            <li><a href="#model">Model</a></li>
+            <li><a href="#view">View</a></li>
+            <li><a href="#viewmodel">ViewModel</a></li>
+            <li><a href="#viewcollection">ViewCollection</a></li>
+            <li><a href="#router">Router</a></li>
+            <li class="pure-menu-heading">Components</li>
+            <li><a href="#vented">Evented</a></li>
+            <li><a href="#attributed">Attributed</a></li>
+            <li><a href="#element">Element</a></li>
+            <li><a href="#hiding">Hiding</a></li>
+            <li><a href="#computing">Computing</a></li>
+            <li><a href="#stateful">Stateful</a></li>
+          </ul>
+        </div>
+      </div>
+      <div id="main" class="pure-u">
+        <div class="hero">
+          <h1 class="pure-u-1">emvy</h1>
+          <h2 class="pure-u-3-4">A tiny (<15kb minified) JavaScript MVVM framework that doesn't make a mess.</h2>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1">
+            <h1 id="intro">Introduction</h1><p>emvy is a framework for creating web-apps that tries to strike a balance between flexibility and structure, aiming to speed up development while still being clear, avoiding &quot;magic&quot; and retaining control. Emvy&#39;s main goals are as follows:</p>
 <ul>
 <li>Don&#39;t make a mess: Not in your objects, not in your DOM. emvy makes heavy use of closures to store its internal state, rather than sprinkling it everywhere.</li>
 <li>Minimize magic, but still be concise and elegant. emvy aims to make code execution reasonably transparent and easy to follow, even to someone unfamiliar with emvy&#39;s structure and concepts.</li>
-<li>Don&#39;t decide your stack for you: emvy doesn&#39;t care what templating you use. emvy pays attention to your data attributes so it can seamlessly swap in new data, but no further. emvy doesn&#39;t care if you use jQuery, Zepto, underscore, lodash, whatever. Using a few other utilities is probably a good idea, but emvy has no dependencies.</li>
+<li>Don&#39;t decide your stack for you: emvy doesn&#39;t care what templating engine you use. emvy pays attention to your data attributes so it can seamlessly swap in new data, but no further. emvy doesn&#39;t care if you use jQuery, Zepto, underscore, lodash, whatever. Using a few other utilities is probably a good idea, but emvy has no dependencies.</li>
 <li>emvy has no default store implementation. Thats right, you&#39;ll have to make your own. emvy provides a trivial API to interact with, and a reference localstorage implementation that uses depot.js</li>
 </ul>
 <p>emvy does however, encourage a few design ideas:</p>
@@ -12,4 +132,191 @@
 <li>Composition over inheritance: emvy&#39;s design is focused around components: functions that extend objects with further functionality. emvy suggests that recurring ideas be expressed in this way in your applications as well. This helps encapsulate functionality away from data. </li>
 <li>Thin routing - The router isn&#39;t at the top in emvy&#39;s design. Its just another source of events. </li>
 </ul>
-</div></div><div class="pure-g-r"><div class="pure-u-1"><h1 id="download">Download</h1><p>Maybe someday soon.</p></div></div><div class="pure-g-r"><div class="pure-u-1"><h1 id="example">Example</h1><p>But does emvy have the obligatory todos example? Yes, yes it does! </p><iframe width="100%" height="300" src="http://jsfiddle.net/muKFX/4/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe></div></div><div class="pure-g-r"><div class="pure-u-1"><h1 id="classes">Classes</h1><p>Coming Soon!</p></div></div><div class="pure-g-r"><div class="pure-u-1"><h1 id="components">Components</h1><p>Comming Soon!</p></div></div></div></div></body></html>
+
+          </div>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1">
+            <h1 id="download">Download</h1>
+            <p>Maybe someday soon. For now grab dev builds off <a href="http://github.com/mdlawson/emvy/">GitHub</a></p>
+          </div>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1">
+            <h1 id="example">Example</h1>
+            <p>But does emvy have the obligatory todos example? Yes, yes it does! </p>
+            <iframe width="100%" height="300" src="http://jsfiddle.net/muKFX/4/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1 docs">
+            <h1 id="classes">Classes</h1><span id="object"></span><h2>Object</h2>
+<p>emvy&#39;s core object class, from which all other classes inherit, doesn&#39;t do much. It merely provides the basis for emvys composition structure, and an extend method for non coffeescripters.</p>
+<h3>(Object|object).is(component)</h3>
+<p><code>is</code> is used to compose objects, adding in your own components or just the ones emvy provides. component can either be a straight component (see components section) or a string referencing one of emvy&#39;s components, eg <code>this.is(&quot;Stated&quot;)</code> will add state machine behavior to an object. In this case additional arguments are passed to the component function. is exists both of the Object class itself for composing static methods, and on all instances.</p>
+<h3>Object.extend(childProps,childStatics)</h3>
+<p>Extend is used to implement classical inheritance if you don&#39;t use coffeescript. childProps are mixed in to the new classes prototype, childStatics are mixed in directly to the child class. if <code>childProps.constructor</code> is present, it will be used as the constructor.</p>
+<h3>object.mixin(obj,ignore)</h3>
+<p>Directly mixin the property of an object to this one. Kinda like components, but less cool. Ignore lets you specify an array of keys you don&#39;t want to mixin.</p>
+<hr>
+<span id="model"></span><h2>Model</h2>
+<p>Models are centralized data stores, which can be persisted to a backend. a Model represents not just a class for making models, but a top level store for all models of that type. </p>
+<h3>Model.init(func)</h3>
+<p>Initializes the Model, adding the Evented component and doing a load of other setup. optional <code>func</code> is called after init is done, useful for further setting up the Model.
+After extending model, say to a class <code>Todos</code>, <code>Todos.init()</code> <em>must</em> be called immediately afterwards.</p>
+<h3>Model(data)</h3>
+<p>Constructor function that makes new model instances from given objects of data.
+Models are initialized with Evented, Computing, and Attributed components, and contain all the methods of those components. Models are attached initially to their constructor, so all model events appear on the constructor under the &quot;model&quot; prefix.</p>
+<h3>Model.all()</h3>
+<p>Returns an array containing all of the model instances created from this Model. </p>
+<h3>Model.raw()</h3>
+<p>Returns an array containing all of the model instances <em>data</em> created from this Model. Due to the way data is stored in emvy, this isn&#39;t any additional work, so <code>raw()</code> is a good choice provided you don&#39;t modify any model data.</p>
+<h3>Model.reset()</h3>
+<p>Resets the Model, removing all data and instances.</p>
+<h3>Model.remove(model)</h3>
+<p>Deletes a single model. Queues up a delete in the persist queue. </p>
+<h3>Model.store(newStore)</h3>
+<p>Sets/gets the store of this model. Calling <code>store()</code> with no args returns the current one, otherwise the store is changed, and a <code>fetch()</code> is done using the new store.
+See the reference localStore implementation for how to roll a store.</p>
+<h3>Model.fetch(cb)</h3>
+<p>Populates this model with models from the store. Calls <code>reset</code> with the new models, and finally runs cb with an array of the new models.</p>
+<h3>Model.persist(cb)</h3>
+<p>Persists changes in all models to the store. All changes are queued up as they are made, (this could allow for incremental rollbacks in the future). <code>persist</code> pushes queued changes to the store, first compacting the queue to a minimal number of store calls. </p>
+<h3>Model.find(id)</h3>
+<p>Find and return the model with the given id. </p>
+<h3>Model.mask(name,func)</h3>
+<p>Makes a new model mask. Masks function as an event filter, allowing you to receive a subset of a models events. When a model emits an event, the model is passed to <code>func</code>. If <code>func</code> returns true, then the mask also emits that event. Otherwise, the event is suppressed. </p>
+<p>Calling <code>Model.mask(name)</code> retrieved a previously defined mask for use.</p>
+<hr>
+<span id="view"></span><h2>View</h2>
+<p>Views are thin event wrappers over the Element component. Views are initialized with the Evented, Element, and Computing components. Views in emvy function as managers for dom events, and proxies for setting and getting dom data. Views have no additional functionality, all view methods can be found in the initial components.  </p>
+<hr>
+<span id="viewmodel"></span><h2>ViewModel</h2>
+<p>ViewModels serve as a simple connection point for views and models (duh!). View Models are initialized with the Evented and Computing components. ViewModels are really just a convenience class, theres nothing here that couldn&#39;t be achieved by manually <code>attach</code>ing views and models together. Viewmodels are initialized with the Evented and Computing components</p>
+<h3>ViewModel(options)</h3>
+<p>Create a new viewModel. options can contain values for view and model, and this will be used. </p>
+<h3>viewModel.model(newmodel)</h3>
+<p>This sets the viewmodel&#39;s model. The old model is detached, and the new is attached in its place. If no new model is provided, the current model is returned.</p>
+<h3>viewModel.view(newview)</h3>
+<p>Basically the above but with the view.</p>
+<hr>
+<span id="viewcollection"></span><h2>ViewCollection</h2>
+<p>ViewCollections serve to manage a load of views for a Model. Responding to events on the model, they create and destroy ViewModel instances and the respective views. ViewCollections are initialized with the Evented component.</p>
+<h3>ViewCollection(options)</h3>
+<p>Create a new viewCollection. Options can contain values for parent, outlet, and view. Currently changing these on an viewCollection thats already been used is a really bad idea, its best to just set them in the options and be done with it. </p>
+<h3>viewCollection.model(newmodel)</h3>
+<p>This sets the viewColletions&#39;s Model. The old Model is detached, and the new is attached in its place. If no new Model is provided, the current model is returned.</p>
+<h3>viewCollection.parent</h3>
+<p>Specifies the element into which created views should be inserted. </p>
+<h3>viewCollection.outlet</h3>
+<p>Specifies the named outlet within the parted into which created views should be inserted. </p>
+<h3>viewCollection.view</h3>
+<p>Specifies the view that should be used with the Model&#39;s models. </p>
+<hr>
+<span id="router"></span><h2>Router</h2>
+<p>emvy&#39;s router is currently a kind of stand-in for a future router closer to my ideals, once I find out what they are. Nonetheless, it functions, and is pretty versatile. The router is a top level singleton, its not a class. (yep, I know this is the classes section but it would feel lonely on its own!) The router emits events based on the path as soon as it is started by calling <code>emvy.Router()</code>.</p>
+<p>The events it emits are pretty simple. For each segment of the path, it will emit the segment, with all previous segments as a prefix, and all further segments as arguments. For example, given the path <code>/user/michael/todos/1</code> the router will emit 4 events as follows:</p>
+<pre><code>&quot;user&quot;, (michael,todos,1)
+&quot;user.michael&quot;, (todos,1)
+&quot;user.michael.todos&quot;, (1)
+&quot;user.michael.todos.1&quot; ()</code></pre>
+<h3>Router.navigate.to(url)</h3>
+<p>Pushes the url into the history, them emits events as above.</p>
+<h3>Router.navigate.up()</h3>
+<p>Pops the last part segment off the path, then calls <code>to()</code> on the new path.</p>
+<h3>Router.navigate.down(to)</h3>
+<p>Pushes the given segment onto the path, then calls <code>to()</code> on the new path.</p>
+<h3>Router.navigate.across(to)</h3>
+<p>Swaps out the last segment of the path with the given one, then calls <code>to()</code> on the new path.</p>
+<hr>
+
+          </div>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1 docs">
+            <h1 id="components">Components</h1><span id="evented"></span><h2>Evented(tag)</h2>
+<p>Evented is emvy&#39;s event emitter. Pretty much everything uses it. 
+emvy&#39;s event system is bubbling, but what does that even mean in this case?
+Every event emitter has an upstream, a downstream, and an optional tag. For every event triggered, the event is applied locally, and provided no local callback returns true, (which stops propagation), the event is then then prepended with the tag, showing its origin, and then send first downstream, and provided nothing there returns true, upstream as well. This lets you control even propagation fairly easily. The tag is supplied when passing a call of <code>Evented</code> to the <code>is</code> function</p>
+<p>When applied, Evented provides the following methods:</p>
+<h3>object.attach(something,oneway)</h3>
+<p>Sets up a connection between two event emitters. The optional argument oneway configures whether the attachment is bidirectional, default is yes. <code>object</code> will have <code>something</code> in its downstream after the attach, and <code>something</code> will have <code>object</code> upstream.</p>
+<h3>object.detach(something,oneway)</h3>
+<p>Removes connections created with attach. oneway dictates if both directions should be detached, defaults to yes.</p>
+<h3>object.on(action, callback)</h3>
+<p>Registers a callback for an action. Actions are usually in the form `type:period.separated.path&quot; though type is not required. if only a callback is provided, that callback will be run on all actions, with the action as its first parameter. Multiple actions can be provided, space separated. </p>
+<h3>object.once(action, callback)</h3>
+<p>Like <code>on</code> but callback will only run once.</p>
+<h3>object.trigger(action, args...)</h3>
+<p>Triggers an action, running all callbacks associated with it and passing it downstream and upstream. All further arguments are passed to callbacks. Multiple actions can be provided, space separated.</p>
+<h3>object.off(action, callback)</h3>
+<p>Remove a callback on an action. If no callback is supplied, all are removed. If no action is supplied, all callbacks on all actions are removed. Multiple actions can be provided, space separated.</p>
+<hr>
+<span id="attributed"></span><h2>Attributed(attributes)</h2>
+<p>This component powers models, and anything else whose data changes should me monitored. an object can be supplied with the call to <code>Attributed()</code>, providing initial data. In addition, this object also becomes the store for all attributes. This means the actual data can be stored in an object external to the model.</p>
+<p>When applied, Attributed provides the following methods:</p>
+<h3>object.get(key)</h3>
+<p>Returns the value of key</p>
+<h3>object.set(key,val)</h3>
+<p>Sets the value of key to val, first calling <code>validate(key,val)</code> if provided, and not doing anything if validate returns false. Triggers events of type &quot;change&quot; eg <code>&quot;change:text&quot;</code> with <code>val</code> as an argument, and also the generic event &quot;change&quot; with <code>key</code> and <code>val</code> as arguments.</p>
+<h3>object.all()</h3>
+<p>returns all the data stored.</p>
+<hr>
+<span id="element"></span><h2>Element(tag,html)</h2>
+<p>Element is the core component that powers a view. Element takes input html, builds a dom node from it, scans the dom node for attributes it understands, then builds cached data structures for fast access to and modification of the data. element also sets up events on the element and listens to them, executing the local methods you specify. </p>
+<p>When you add the element component, you can supply an optional tag (defaults to div) and the html the element starts with. </p>
+<p>First, lets look at all the data attributes Element recognizes and how to use them.</p>
+<h3>data-bind</h3>
+<p>The data-bind attribute lets you specify the property (or computed), whose value you want to be the innerHtml of this element. Unless the element is an input, a textarea, or a select element, in which case data-bind sets the value. eg, an element with the attribute <code>data-bind=&quot;todo&quot;</code> would apply apply any incoming events of type <code>change:model.todo</code> to that element</p>
+<h3>data-outlet</h3>
+<p>This attribute lets you create named outlets, where other views can insert elements. <code>data-outlet=&quot;todos&quot;</code> will create an outlet named todos. See insert and insertInto below for more details on outlets. </p>
+<h3>data-class</h3>
+<p>This lets you set up bindings for class names. In its most simple usage, <code>data-class=&quot;myClass&quot; would bind the value of myClass on the model or a computed as a class on the element. This isn&#39;t normally useful, so in addition emvy supports a ternary syntax for describing toggleable classes depending on boolean attributes.</code>data-class=&quot;done?strike&quot; means the element will have the class strike when done is true, and the class will be removed if its false. <code>class=&quot;done?strike:red&quot; would mean the class would be replaced with</code>red` when done is false. </p>
+<h3>data-attr</h3>
+<p>This lets you set up bindings to attribute values. It works nearly identically to class bindings as described above, except the name of the attribute is specified at the start, separated with a <code>|</code>. eg, <code>data-attr=&quot;src|img&quot;</code>. The ternary syntax described above is fully supported here as well. </p>
+<h3>data-link</h3>
+<p>This functions as a helper for calling router navigate actions. The action is provided as the first option, followed by the url. eg <code>data-link=&quot;to /test&quot;</code></p>
+<h3>data-(click|dblclick|keypress|keydown|keyup|enter)</h3>
+<p>Binds to all the common input events. (plus one more, enter, for getting enter key presses) These all work in exactly the same way. A function is specified, and if the view has the function, it is executed when the event takes place. The last argument to the function is the actual event, and all other arguments are any additional, space separated values given in the attribute. eg, <code>data-click=&quot;myFunc hi there!&quot; calls</code>myFunc(&quot;hi&quot;, &quot;there!&quot;,e)`</p>
+<hr>
+<p>Element provides the following methods when it is applied:</p>
+<h3>object.set(key, val)</h3>
+<p>Sets the value of any data-bindings on key.</p>
+<h3>object.get(key)</h3>
+<p><em>Sort of</em> gets the value of data bindings on key. In reality it gets the first value it finds, and hopes they&#39;re all the same (they should be). Also tries to grab attributes bound with data-attr if relevant, but will never grab class values bound with data-class.</p>
+<h3>object.html(newhtml)</h3>
+<p>Replaces the elements html with newhtml, rebuilding all caches, and triggering a reset event that should get data applied to it again. Calling this method without newhtml returns the current html</p>
+<h3>object.insertInto(view,outlet)</h3>
+<p>Inserts this element into a named outlet on another view, or if view is a string, uses <code>document.querySelector</code> and <code>appendChild</code> to insert it into a dom node described by the string.</p>
+<h3>object.insert(view,outlet)</h3>
+<p>Inserts another view into a named outlet on this element.</p>
+<h3>object.remove()</h3>
+<p>Removes this element from the dom</p>
+<h3>object.clean(outlet)</h3>
+<p>Removes all elements from the given outlet. If no outlet is provided, removes all elements from all outlets. </p>
+<hr>
+<span id="hiding"></span><h2>Hiding(key,initialVal,set,get)</h2>
+<p>This component lets you specify attributes to be &quot;hidden&quot; behind a setter/getter. it is used internally quite a bit, for example in the ViewModel for running changes to the model and the view through a setter first.</p>
+<p>Hiding is called supplying a key, the name of the resulting function on the object, an initial value, which is first run through the setter, a setter function, and a getter function. It create a function in the form: object.key(newval) where newval is not supplied to get the current val, which you should recognize from the rest of emvy. </p>
+<p>If newval is supplied, the setter function is called like so `set(currentValue,newValue) and its return value is taken to be the final new value. Otherwise the getter is called with the current value, and the value returned by the getter is returned as the final current value.</p>
+<hr>
+<span id="computing"></span><h2>Computing()</h2>
+<p>Computing adds the computed function to the object, which allows the creation of computed values that depend on other values.</p>
+<h3>object.computed(name, func, deps)</h3>
+<p>Creates a new computed value. <code>name</code> is the name of the value, when its changes are broadcast in events. <code>func</code> is the function called to compute the value, and <code>deps</code> is an array of properties whose changes this computed depends on. <code>deps</code> can also contain Models, in which case all changes on the model will cause recalculation of the computed. When a change in any of its dependencies occurs, <code>func</code> is called, and the value returned from func is emitted. </p>
+<hr>
+<span id="stateful"></span><h2>Stateful(states)</h2>
+<p>Stateful is emvys implementation of a Finite State Machine. States can be initially defined by an object <code>states</code> that maps keys of state names to functions that are called when the state is entered, and should return a object of properties that should be changed for that state. Setter/getter properties, such as those created by Hiding, are taken into account. Stateful objects emit events on state change, one event simply showing the new state <code>state:newstate</code> one showing the transition that occurred <code>state:initial-&gt;newstate</code> and one just showing the exit of the old state &quot;state:initial-&gt;&quot;</p>
+<p>The initial state of the object is stored in the special state initial.</p>
+<h3>object.transition(state)</h3>
+<p>Transition to state <code>state</code></p>
+<h3>object.addState(name,func)</h3>
+<p>Add the state described by <code>func</code> as <code>name</code></p>
+<hr>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
