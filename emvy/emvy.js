@@ -321,7 +321,7 @@
             }
           }
         };
-        _ref = ["click", "dblclick", "keypress", "keydown", "keyup", "change"];
+        _ref = ["click", "dblclick", "keypress", "keydown", "keyup", "change", "input", "propertychange"];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ev = _ref[_i];
           element.addEventListener(ev, function(e) {
@@ -331,6 +331,8 @@
             type = e.type;
             switch (type) {
               case "change":
+              case "input":
+              case "propertychange":
                 name = el.getAttribute("data-bind");
                 if (name && el.type !== "checkbox") {
                   _this.trigger("change", name, el.value, el);
