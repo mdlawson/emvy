@@ -178,12 +178,12 @@
           if @[action] then @[action].apply(@,parts)
 
 
-      for ev in ["click","dblclick","keypress","keydown","keyup","change"]
+      for ev in ["click","dblclick","keypress","keydown","keyup","change","input","propertychange"]
         element.addEventListener ev, (e) =>
           el = e.target
           type = e.type
           switch type
-            when "change"
+            when "change", "input", "propertychange"
               name = el.getAttribute "data-bind"
               if name and el.type isnt "checkbox"
                 @trigger "change",name,el.value,el
