@@ -15,7 +15,7 @@ class TodoView extends emvy.View
   constructor: ->
     super
     @is "Stateful",
-      editing: ->
+      editing:
         html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
 
 

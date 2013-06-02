@@ -24,12 +24,14 @@
       @detach = (something,oneway,up) ->
         unless up
           index = downstream.indexOf something
-          downstream.splice index,1
+          if index > -1
+            downstream.splice index,1
           unless oneway
             something.detach @,false,true
         else
           index = upstream.indexOf something
-          upstream.splice index,1
+          if index > -1
+            upstream.splice index,1
       @on = (action, callback) ->
         if not callback and typeof action is "function"
           all.push callback
@@ -293,7 +295,7 @@
     return ->
       @transition = (state) ->
         if state = store[state]
-          for key,val of state.call @
+          for key,val of state
             if @[key]
               if typeof @[key] is "function" and typeof val isnt "function"
                 if not store.initial[key] then store.initial[key] = @[key]()
@@ -307,8 +309,8 @@
           @trigger "state:#{@state}->"
           @trigger "state:#{@state}->#{state}"
           @state = state
-      @addState = (name,func) ->
-        store[name] = func
+      @addState = (name,state) ->
+        store[name] = state
       for state,func of states
         @addState(state,func)
 
@@ -515,7 +517,7 @@
         viewmodels = []
         @parent.clean @outlet
       @is Hiding "model", options.model,(old,val) ->
-        old and old.detach @,false,true
+        old and old.detach @,true,false
         val.attach @,true,false
         @trigger "reset:Model"
         @trigger("add:Model",model) for model in val.all()

@@ -42,13 +42,17 @@
 
           if (!up) {
             index = downstream.indexOf(something);
-            downstream.splice(index, 1);
+            if (index > -1) {
+              downstream.splice(index, 1);
+            }
             if (!oneway) {
               return something.detach(this, false, true);
             }
           } else {
             index = upstream.indexOf(something);
-            return upstream.splice(index, 1);
+            if (index > -1) {
+              return upstream.splice(index, 1);
+            }
           }
         };
         this.on = function(action, callback) {
@@ -528,12 +532,11 @@
         var func, state, _results;
 
         this.transition = function(state) {
-          var key, val, _ref;
+          var key, val;
 
           if (state = store[state]) {
-            _ref = state.call(this);
-            for (key in _ref) {
-              val = _ref[key];
+            for (key in state) {
+              val = state[key];
               if (this[key]) {
                 if (typeof this[key] === "function" && typeof val !== "function") {
                   if (!store.initial[key]) {
@@ -556,8 +559,8 @@
             return this.state = state;
           }
         };
-        this.addState = function(name, func) {
-          return store[name] = func;
+        this.addState = function(name, state) {
+          return store[name] = state;
         };
         _results = [];
         for (state in states) {
@@ -1004,7 +1007,7 @@
         this.is(Hiding("model", options.model, function(old, val) {
           var model, _i, _len, _ref;
 
-          old && old.detach(this, false, true);
+          old && old.detach(this, true, false);
           val.attach(this, true, false);
           this.trigger("reset:Model");
           _ref = val.all();

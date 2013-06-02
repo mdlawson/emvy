@@ -47,10 +47,8 @@
     function TodoView() {
       TodoView.__super__.constructor.apply(this, arguments);
       this.is("Stateful", {
-        editing: function() {
-          return {
-            html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
-          };
+        editing: {
+          html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
         }
       });
     }
