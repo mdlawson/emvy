@@ -311,7 +311,7 @@
           if (action) {
             parts = action.split(" ");
             action = parts.shift();
-            parts.push(e);
+            parts.unshift(e);
             if (_this[action]) {
               return _this[action].apply(_this, parts);
             }
@@ -528,11 +528,12 @@
         var func, state, _results;
 
         this.transition = function(state) {
-          var key, val;
+          var key, val, _ref;
 
           if (state = store[state]) {
-            for (key in state) {
-              val = state[key];
+            _ref = state.call(this);
+            for (key in _ref) {
+              val = _ref[key];
               if (this[key]) {
                 if (typeof this[key] === "function" && typeof val !== "function") {
                   if (!store.initial[key]) {
@@ -550,12 +551,13 @@
               }
             }
             this.trigger("state:" + state);
+            this.trigger("state:" + this.state + "->");
             this.trigger("state:" + this.state + "->" + state);
             return this.state = state;
           }
         };
         this.addState = function(name, func) {
-          return store[name] = func.call(this, "state:" + name);
+          return store[name] = func;
         };
         _results = [];
         for (state in states) {

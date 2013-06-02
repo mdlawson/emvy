@@ -172,7 +172,7 @@
         if action
           parts = action.split(" ")
           action = parts.shift()
-          parts.push e
+          parts.unshift e
           if @[action] then @[action].apply(@,parts)
 
 
@@ -294,7 +294,7 @@
     return ->
       @transition = (state) ->
         if state = store[state]
-          for key,val of state
+          for key,val of state.call @
             if @[key]
               if typeof @[key] is "function" and typeof val isnt "function"
                 if not store.initial[key] then store.initial[key] = @[key]()
@@ -305,10 +305,11 @@
             else
               @[key] = val
           @trigger "state:#{state}"
+          @trigger "state:#{@state}->"
           @trigger "state:#{@state}->#{state}"
           @state = state
       @addState = (name,func) ->
-        store[name] = func.call @,"state:#{name}"
+        store[name] = func
       for state,func of states
         @addState(state,func)
 
