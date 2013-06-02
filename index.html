@@ -244,7 +244,7 @@ Every event emitter has an upstream, a downstream, and an optional tag. For ever
 <h3>object.detach(something,oneway)</h3>
 <p>Removes connections created with attach. oneway dictates if both directions should be detached, defaults to yes.</p>
 <h3>object.on(action, callback)</h3>
-<p>Registers a callback for an action. Actions are usually in the form `type:period.separated.path&quot; though type is not required. if only a callback is provided, that callback will be run on all actions, with the action as its first parameter. Multiple actions can be provided, space separated. </p>
+<p>Registers a callback for an action. Actions are usually in the form <code>type:period.separated.path</code> though type is not required. if only a callback is provided, that callback will be run on all actions, with the action as its first parameter. Multiple actions can be provided, space separated. </p>
 <h3>object.once(action, callback)</h3>
 <p>Like <code>on</code> but callback will only run once.</p>
 <h3>object.trigger(action, args...)</h3>
@@ -271,13 +271,13 @@ Every event emitter has an upstream, a downstream, and an optional tag. For ever
 <h3>data-outlet</h3>
 <p>This attribute lets you create named outlets, where other views can insert elements. <code>data-outlet=&quot;todos&quot;</code> will create an outlet named todos. See insert and insertInto below for more details on outlets. </p>
 <h3>data-class</h3>
-<p>This lets you set up bindings for class names. In its most simple usage, <code>data-class=&quot;myClass&quot; would bind the value of myClass on the model or a computed as a class on the element. This isn&#39;t normally useful, so in addition emvy supports a ternary syntax for describing toggleable classes depending on boolean attributes.</code>data-class=&quot;done?strike&quot;<code>means the element will have the class strike when done is true, and the class will be removed if its false.</code>class=&quot;done?strike:red&quot;<code>would mean the class would be replaced with</code>red` when done is false. </p>
+<p>This lets you set up bindings for class names. In its most simple usage, <code>data-class=&quot;myClass&quot;</code> would bind the value of myClass on the model or a computed as a class on the element. This isn&#39;t normally useful, so in addition emvy supports a ternary syntax for describing toggleable classes depending on boolean attributes. <code>data-class=&quot;done?strike&quot;</code> means the element will have the class strike when done is true, and the class will be removed if its false. <code>class=&quot;done?strike:red&quot;</code> would mean the class would be replaced with <code>red</code> when done is false. </p>
 <h3>data-attr</h3>
 <p>This lets you set up bindings to attribute values. It works nearly identically to class bindings as described above, except the name of the attribute is specified at the start, separated with a <code>|</code>. eg, <code>data-attr=&quot;src|img&quot;</code>. The ternary syntax described above is fully supported here as well. </p>
 <h3>data-link</h3>
 <p>This functions as a helper for calling router navigate actions. The action is provided as the first option, followed by the url. eg <code>data-link=&quot;to /test&quot;</code></p>
 <h3>data-(click|dblclick|keypress|keydown|keyup|enter)</h3>
-<p>Binds to all the common input events. (plus one more, enter, for getting enter key presses) These all work in exactly the same way. A function is specified, and if the view has the function, it is executed when the event takes place. The last argument to the function is the actual event, and all other arguments are any additional, space separated values given in the attribute. eg, <code>data-click=&quot;myFunc hi there!&quot; calls</code>myFunc(&quot;hi&quot;, &quot;there!&quot;,e)`</p>
+<p>Binds to all the common input events. (plus one more, enter, for getting enter key presses) These all work in exactly the same way. A function is specified, and if the view has the function, it is executed when the event takes place. The last argument to the function is the actual event, and all other arguments are any additional, space separated values given in the attribute. eg, <code>data-click=&quot;myFunc hi there!&quot;</code> calls <code>myFunc(&quot;hi&quot;, &quot;there!&quot;,e)</code></p>
 <hr>
 <p>Element provides the following methods when it is applied:</p>
 <h3>object.set(key, val)</h3>
@@ -297,8 +297,8 @@ Every event emitter has an upstream, a downstream, and an optional tag. For ever
 <hr>
 <span id="hiding"></span><h2>Hiding(key,initialVal,set,get)</h2>
 <p>This component lets you specify attributes to be &quot;hidden&quot; behind a setter/getter. it is used internally quite a bit, for example in the ViewModel for running changes to the model and the view through a setter first.</p>
-<p>Hiding is called supplying a key, the name of the resulting function on the object, an initial value, which is first run through the setter, a setter function, and a getter function. It create a function in the form: object.key(newval) where newval is not supplied to get the current val, which you should recognize from the rest of emvy. </p>
-<p>If newval is supplied, the setter function is called like so `set(currentValue,newValue) and its return value is taken to be the final new value. Otherwise the getter is called with the current value, and the value returned by the getter is returned as the final current value.</p>
+<p>Hiding is called supplying a key, the name of the resulting function on the object, an initial value, which is first run through the setter, a setter function, and a getter function. It create a function in the form: <code>object.key(newval)</code> where newval is not supplied to get the current val, which you should recognize from the rest of emvy. </p>
+<p>If newval is supplied, the setter function is called like so <code>set(currentValue,newValue)</code> and its return value is taken to be the final new value. Otherwise the getter is called with the current value, and the value returned by the getter is returned as the final current value.</p>
 <hr>
 <span id="computing"></span><h2>Computing()</h2>
 <p>Computing adds the computed function to the object, which allows the creation of computed values that depend on other values.</p>
@@ -306,7 +306,7 @@ Every event emitter has an upstream, a downstream, and an optional tag. For ever
 <p>Creates a new computed value. <code>name</code> is the name of the value, when its changes are broadcast in events. <code>func</code> is the function called to compute the value, and <code>deps</code> is an array of properties whose changes this computed depends on. <code>deps</code> can also contain Models, in which case all changes on the model will cause recalculation of the computed. When a change in any of its dependencies occurs, <code>func</code> is called, and the value returned from func is emitted. </p>
 <hr>
 <span id="stateful"></span><h2>Stateful(states)</h2>
-<p>Stateful is emvys implementation of a Finite State Machine. States can be initially defined by an object <code>states</code> that maps keys of state names to objects of properties that should be changed for that state. Setter/getter properties, such as those created by Hiding, are taken into account. Stateful objects emit events on state change, one event simply showing the new state <code>state:newstate</code> one showing the transition that occurred <code>state:initial-&gt;newstate</code> and one just showing the exit of the old state &quot;state:initial-&gt;&quot;</p>
+<p>Stateful is emvys implementation of a Finite State Machine. States can be initially defined by an object <code>states</code> that maps keys of state names to objects of properties that should be changed for that state. Setter/getter properties, such as those created by Hiding, are taken into account. Stateful objects emit events on state change, one event simply showing the new state <code>state:newstate</code> one showing the transition that occurred <code>state:initial-&gt;newstate</code> and one just showing the exit of the old state <code>state:initial-&gt;</code></p>
 <p>The initial state of the object is stored in the special state initial.</p>
 <h3>object.transition(name)</h3>
 <p>Transition to state <code>name</code></p>
