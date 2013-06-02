@@ -14,19 +14,19 @@
     all = []
     return ->
       that = @
-      @attach = (something,up,oneway) ->
+      @attach = (something,oneway,up) ->
         unless up
           downstream.push something
           unless oneway
-            something.attach @,true
+            something.attach @,false,true
         else
           upstream.push something
-      @detach = (something,up,oneway) ->
+      @detach = (something,oneway,up) ->
         unless up
           index = downstream.indexOf something
           downstream.splice index,1
           unless oneway
-            something.detach @,true
+            something.detach @,false,true
         else
           index = upstream.indexOf something
           upstream.splice index,1
@@ -360,7 +360,7 @@
         for key,val of @all()
           view.set key,val
         return true
-      @attach @constructor,true
+      @attach @constructor,true,true
       @constructor.trigger "add",@
       @constructor.trigger "change"
     @init: (func) ->
@@ -465,7 +465,7 @@
   class ModelMask extends EObject
     constructor: (Model,func) ->
       @is Evented()
-      Model.attach @,false,true
+      Model.attach @,true,false
       @on "Model.remove Model.add", (model) ->
         return if func(model) then false else true
       @all = ->
@@ -516,7 +516,7 @@
         @parent.clean @outlet
       @is Hiding "model", options.model,(old,val) ->
         old and old.detach @,false,true
-        val.attach @,false,true
+        val.attach @,true,false
         @trigger "reset:Model"
         @trigger("add:Model",model) for model in val.all()
         return val

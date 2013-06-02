@@ -27,24 +27,24 @@
         var that;
 
         that = this;
-        this.attach = function(something, up, oneway) {
+        this.attach = function(something, oneway, up) {
           if (!up) {
             downstream.push(something);
             if (!oneway) {
-              return something.attach(this, true);
+              return something.attach(this, false, true);
             }
           } else {
             return upstream.push(something);
           }
         };
-        this.detach = function(something, up, oneway) {
+        this.detach = function(something, oneway, up) {
           var index;
 
           if (!up) {
             index = downstream.indexOf(something);
             downstream.splice(index, 1);
             if (!oneway) {
-              return something.detach(this, true);
+              return something.detach(this, false, true);
             }
           } else {
             index = upstream.indexOf(something);
@@ -667,7 +667,7 @@
           }
           return true;
         });
-        this.attach(this.constructor, true);
+        this.attach(this.constructor, true, true);
         this.constructor.trigger("add", this);
         this.constructor.trigger("change");
       }
@@ -863,7 +863,7 @@
 
       function ModelMask(Model, func) {
         this.is(Evented());
-        Model.attach(this, false, true);
+        Model.attach(this, true, false);
         this.on("Model.remove Model.add", function(model) {
           if (func(model)) {
             return false;
@@ -1003,7 +1003,7 @@
           var model, _i, _len, _ref;
 
           old && old.detach(this, false, true);
-          val.attach(this, false, true);
+          val.attach(this, true, false);
           this.trigger("reset:Model");
           _ref = val.all();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
