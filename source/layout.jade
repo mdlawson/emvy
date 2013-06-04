@@ -1,0 +1,52 @@
+!!! 5
+html
+  head
+    title emvy
+    block styles
+      link(rel="stylesheet", href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600")
+      link(rel="stylesheet", href="./pure.css")
+      include app.styl
+  body
+    a(href='https://github.com/mdlawson/emvy/')
+      img(style='position: absolute; top: 0; right: 0; border: 0;', src='https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png', alt='Fork me on GitHub')
+    div.pure-g-r#container
+      div.pure-u#menu
+        .pure-menu.pure-menu-open
+          a.pure-menu-heading.title(href="#") emvy 
+          ul
+            li 
+              a(href="#intro") Introduction
+            li 
+              a(href="#download") Download
+            li 
+              a(href="#example") Example
+            li.pure-menu-heading Classes
+            li
+              a(href="#object") Object
+            li
+              a(href="#model") Model
+            li
+              a(href="#view") View
+            li
+              a(href="#viewmodel") ViewModel
+            li
+              a(href="#viewcollection") ViewCollection
+            li
+              a(href="#router") Router
+            li.pure-menu-heading Components
+            li
+              a(href="#vented") Evented
+            li
+              a(href="#attributed") Attributed
+            li
+              a(href="#element") Element
+            li
+              a(href="#hiding") Hiding
+            li
+              a(href="#computing") Computing
+            li
+              a(href="#stateful") Stateful
+
+      div.pure-u#main
+        block content
+    block scripts

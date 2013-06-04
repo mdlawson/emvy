@@ -1,0 +1,52 @@
+extends layout
+
+block content
+  .hero
+    h1.pure-u-1 emvy
+    h2.pure-u-3-4 A tiny (<15kb minified) JavaScript MVVM framework that doesn't make a mess.
+  .pure-g-r
+    .pure-u-1
+      h1#intro Introduction
+      include content/intro.md
+  .pure-g-r
+    .pure-u-1
+      h1#download Download
+      p Maybe someday soon. For now grab dev builds off 
+        a(href="http://github.com/mdlawson/emvy/") GitHub
+  .pure-g-r
+    .pure-u-1
+      h1#example Example
+      p But does emvy have the obligatory todos example? Yes, yes it does! 
+      iframe(width="100%",height="300",src="http://jsfiddle.net/muKFX/5/embedded/",allowfullscreen="allowfullscreen",frameborder="0")
+      p It's also available in JavaScript:
+      iframe(width="100%",height="300",src="http://jsfiddle.net/Acconut/muKFX/11/embedded/",allowfullscreen="allowfullscreen",frameborder="0")
+  .pure-g-r
+    .pure-u-1.docs
+      h1#classes Classes
+      span#object
+      include content/object.md
+      span#model
+      include content/model.md
+      span#view
+      include content/view.md
+      span#viewmodel
+      include content/viewmodel.md
+      span#viewcollection
+      include content/viewcollection.md
+      span#router
+      include content/router.md
+  .pure-g-r
+    .pure-u-1.docs
+      h1#components Components
+      span#evented
+      include content/evented.md
+      span#attributed
+      include content/attributed.md
+      span#element
+      include content/element.md
+      span#hiding
+      include content/hiding.md
+      span#computing
+      include content/computing.md
+      span#stateful
+      include content/stateful.md
