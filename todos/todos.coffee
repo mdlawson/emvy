@@ -14,10 +14,10 @@ class TodoView extends emvy.View
   tag: "li"
   constructor: ->
     super
-    @is "Stateful",
+    @is emvy.Stateful(
       editing:
         html: '<span><input data-enter="transition initial" data-bind="todo"></span>'
-
+    )
 
 class AppView extends emvy.View
   html: """

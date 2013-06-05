@@ -6,7 +6,54 @@
   else
     root.emvy = factory()
 ) this, ->
-  
+
+  ## Utils
+
+  isArray = (a) -> Object::toString.call(a) is "[object Array]"
+
+  load = (component) ->
+    component.call @
+    return @
+
+  create = (obj,components...) ->
+    for component in components
+      component.call obj
+    return obj
+
+  array = (arr) ->
+    Evented("Model").call arr
+    arr.on "add", (item) -> if item.attach then item.attach arr,true,true
+    orig = Array::
+    arr.pop = ->
+      result = orig.pop.apply @,arguments
+      @trigger "remove",result
+      return result
+    arr.push = (items...) ->
+      result = orig.push.apply @,arguments
+      for item in items
+        @trigger "add",item
+      return result
+    arr.shift = ->
+      result = orig.shift.apply @,arguments
+      @trigger "remove",result
+      return result
+    arr.unshift = (items...) ->
+      result = orig.unshift.apply @,arguments
+      for item in items
+        @trigger "add",item,true
+      return result
+    arr.splice = ->
+      result = orig.splice.apply @,arguments
+      @trigger "reset"
+      for item in @
+        @trigger "add",item
+      return result
+    arr.all = -> arr
+    arr.trigger("add", item) for item in arr
+    return arr
+
+  ## Components
+
   Evented = (tag) ->
     callbacks = {}
     upstream = []
@@ -240,17 +287,21 @@
         element.innerHTML = data or ""
         rebuild()
         @trigger "reset",@
-      @insertInto = (view,outlet) ->
+      @insertInto = (view,outlet,pre) ->
         if typeof view is "string"
           el = document.querySelector view
           el.appendChild element
         else
-          view.insert element,outlet
-      @insert = (view,outlet) ->
+          view.insert element,outlet,pre
+      @insert = (view,outlet,pre) ->
         if view.insertInto
           @insertInto @,outlet
         else
-          outlets[outlet].appendChild view
+          el = outlets[outlet]
+          if pre and el.firstChild
+            el.insertBefore view,el.firstChild
+          else
+            el.appendChild view
       @remove = ->
         if element.parentNode
           element.parentNode.removeChild element
@@ -314,21 +365,7 @@
       for state,func of states
         @addState(state,func)
 
-  components = {
-    Computing: Computing
-    Hiding: Hiding
-    Element: Element
-    Attributed: Attributed
-    Evented: Evented
-    Stateful: Stateful
-  }
-
-  load = (component,args...) ->
-    if typeof component is "string"
-      components[component](args...).call @
-    else
-      component.call @
-    return @
+  ## Classes
 
   class EObject
     @is: load 
@@ -504,10 +541,10 @@
       @is Evented()
       @mixin options, ["model"]
       viewmodels = {}
-      @on "add:Model",(model) =>
+      @on "add:Model",(model,pre) =>
         view = new (@view or options.view)
         viewmodels[model.get("id")] = new ViewModel({model:model,view:view})
-        if @parent then view.insertInto(@parent,@outlet)
+        if @parent then view.insertInto(@parent,@outlet,pre)
       @on "remove:Model",(model) =>
         id = model.get("id")
         viewmodel = viewmodels[id]
@@ -520,7 +557,7 @@
         old and old.detach @,true,false
         val.attach @,true,false
         @trigger "reset:Model"
-        @trigger("add:Model",model) for model in val.all()
+        @trigger("add:Model",model) for model in val.all() 
         return val
   
   Router = (options={}) ->
@@ -577,6 +614,16 @@
     View: View
     ViewModel: ViewModel
     ViewCollection: ViewCollection
+
+    Computing: Computing
+    Hiding: Hiding
+    Element: Element
+    Attributed: Attributed
+    Evented: Evented
+    Stateful: Stateful
+
+    create: create
+    array: array
   }
 
 
