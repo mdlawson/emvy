@@ -6,7 +6,7 @@
   else
     root.emvy.localStore = factory(root.depot)
 ) this, (depot) ->
-  localStore = (name) ->
+  localStore = (name,create,update,destroy) ->
     store = depot name,{idAttribute:"id"}
     return {
       create: (id,model,cb) ->

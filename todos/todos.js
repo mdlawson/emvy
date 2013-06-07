@@ -20,7 +20,7 @@
 
   Todo.init(function() {
     var _this = this;
-    this.store(emvy.localStore("todos"));
+    this.store(emvy.localStore, "todos");
     this.on("change:model", function() {
       return _this.persist();
     });

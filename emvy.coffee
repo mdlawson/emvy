@@ -138,11 +138,11 @@
     return ->
       @get = (key) -> attributes[key]
       @all = -> attributes
-      @set = (key,value) ->
+      @set = (key,value,rebuilding) ->
         if (@validate and @validate(key,value)) or not @validate
           attributes[key] = value
-          @trigger "change:#{key}",value,attributes
-          @trigger "change",key,value,attributes
+          @trigger "change:#{key}",value,attributes,rebuilding
+          @trigger "change",key,value,attributes,rebuilding
   
   Element = (tag,html) ->
     element = document.createElement(tag or "div")
@@ -409,6 +409,13 @@
       masks = {}
       queues = {}
       store = undefined
+
+      create = (item) => new @(item,true)
+      update = (item) =>
+        model = @find(item.id)
+        model.set(key,val,true) for key,val of item
+      destroy = (item) => @remove(item.id,true)
+
       @persist = (cb) ->
         merge = []
         for key,queue of queues
@@ -439,8 +446,9 @@
             if remaining is 0 and cb then cb()
           )
         return merge
-      @store = (newStore) ->
-        if newStore then store = newStore
+      @store = (newStore,name) ->
+        
+        if newStore then store = newStore(name,create,update,destroy)
         @fetch()
         return store
 
@@ -449,13 +457,14 @@
           @reset results,true
           if cb then cb @all()
 
-      @on "change:model", (key,value,model) ->
-        delta = {}
-        delta[key] = value
-        queues[model.id] ?= []
-        queues[model.id].push 
-          action: "update"
-          model: delta
+      @on "change:model", (key,value,model,rebuilding) ->
+        unless rebuilding
+          delta = {}
+          delta[key] = value
+          queues[model.id] ?= []
+          queues[model.id].push 
+            action: "update"
+            model: delta
 
       @add = (data,model,rebuilding) ->
         temp = raws[raws.length] = {id:raws.length+1}
@@ -467,17 +476,25 @@
             action: "create"
             model: temp
         return temp
-      @remove = (model,raw) ->
-        if raw
-          index = raws.indexOf(model)
-          model = models[index]
+      @remove = (model,raw,rebuilding) ->
+        if typeof model is "object"
+          if raw
+            index = raws.indexOf(model)
+            model = models[index]
+          else
+            index = models.indexOf(model)
         else
-          index = models.indexOf(model)
+          rebuilding = raw
+          for raw,i in raws when raw.id is model
+            index = i
+            model = models[i]
+            break
         @trigger "remove",model
-        queues[id = raws[index].id] ?= []
-        queues[id].push
-          action: "destroy"
-          model: raws[index]
+        unless rebuilding
+          queues[id = raws[index].id] ?= []
+          queues[id].push
+            action: "destroy"
+            model: raws[index]
         models.splice index,1
         raws.splice index,1
         @trigger "change"

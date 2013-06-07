@@ -244,11 +244,11 @@
         this.all = function() {
           return attributes;
         };
-        return this.set = function(key, value) {
+        return this.set = function(key, value, rebuilding) {
           if ((this.validate && this.validate(key, value)) || !this.validate) {
             attributes[key] = value;
-            this.trigger("change:" + key, value, attributes);
-            return this.trigger("change", key, value, attributes);
+            this.trigger("change:" + key, value, attributes, rebuilding);
+            return this.trigger("change", key, value, attributes, rebuilding);
           }
         };
       };
@@ -715,13 +715,30 @@
       }
 
       Model.init = function(func) {
-        var masks, models, queues, raws, store;
+        var destroy, masks, models, queues, raws, store, update,
+          _this = this;
         this.is(Evented("Model"));
         models = [];
         raws = [];
         masks = {};
         queues = {};
         store = void 0;
+        create = function(item) {
+          return new _this(item, true);
+        };
+        update = function(item) {
+          var key, model, val, _results;
+          model = _this.find(item.id);
+          _results = [];
+          for (key in item) {
+            val = item[key];
+            _results.push(model.set(key, val, true));
+          }
+          return _results;
+        };
+        destroy = function(item) {
+          return _this.remove(item.id, true);
+        };
         this.persist = function(cb) {
           var i, item, key, merge, queue, remaining, update1, val, _i, _j, _k, _len, _len1, _len2, _ref;
           merge = [];
@@ -779,9 +796,9 @@
           }
           return merge;
         };
-        this.store = function(newStore) {
+        this.store = function(newStore, name) {
           if (newStore) {
-            store = newStore;
+            store = newStore(name, create, update, destroy);
           }
           this.fetch();
           return store;
@@ -795,17 +812,19 @@
             }
           });
         };
-        this.on("change:model", function(key, value, model) {
+        this.on("change:model", function(key, value, model, rebuilding) {
           var delta, _name;
-          delta = {};
-          delta[key] = value;
-          if (queues[_name = model.id] == null) {
-            queues[_name] = [];
+          if (!rebuilding) {
+            delta = {};
+            delta[key] = value;
+            if (queues[_name = model.id] == null) {
+              queues[_name] = [];
+            }
+            return queues[model.id].push({
+              action: "update",
+              model: delta
+            });
           }
-          return queues[model.id].push({
-            action: "update",
-            model: delta
-          });
         });
         this.add = function(data, model, rebuilding) {
           var key, temp, val, _name;
@@ -828,22 +847,37 @@
           }
           return temp;
         };
-        this.remove = function(model, raw) {
-          var id, index, _name;
-          if (raw) {
-            index = raws.indexOf(model);
-            model = models[index];
+        this.remove = function(model, raw, rebuilding) {
+          var i, id, index, _i, _len, _name;
+          if (typeof model === "object") {
+            if (raw) {
+              index = raws.indexOf(model);
+              model = models[index];
+            } else {
+              index = models.indexOf(model);
+            }
           } else {
-            index = models.indexOf(model);
+            rebuilding = raw;
+            for (i = _i = 0, _len = raws.length; _i < _len; i = ++_i) {
+              raw = raws[i];
+              if (!(raw.id === model)) {
+                continue;
+              }
+              index = i;
+              model = models[i];
+              break;
+            }
           }
           this.trigger("remove", model);
-          if (queues[_name = id = raws[index].id] == null) {
-            queues[_name] = [];
+          if (!rebuilding) {
+            if (queues[_name = id = raws[index].id] == null) {
+              queues[_name] = [];
+            }
+            queues[id].push({
+              action: "destroy",
+              model: raws[index]
+            });
           }
-          queues[id].push({
-            action: "destroy",
-            model: raws[index]
-          });
           models.splice(index, 1);
           raws.splice(index, 1);
           return this.trigger("change");

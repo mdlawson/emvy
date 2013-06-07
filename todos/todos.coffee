@@ -2,7 +2,7 @@ emvy.Router()
 
 class Todo extends emvy.Model
 Todo.init ->
-  @store emvy.localStore "todos"
+  @store emvy.localStore,"todos" 
   @on "change:model", => @persist()
   @mask "active", (todo) ->
     if not todo.get("done") then return true

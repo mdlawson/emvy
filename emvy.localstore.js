@@ -10,7 +10,7 @@
     }
   })(this, function(depot) {
     var localStore;
-    localStore = function(name) {
+    localStore = function(name, create, update, destroy) {
       var store;
       store = depot(name, {
         idAttribute: "id"
